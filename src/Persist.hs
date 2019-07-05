@@ -18,8 +18,8 @@ persisitData :: IO String
 persisitData = do
   databseURL  <- fmap (fromMaybe "No dataBase") (lookupEnv "DATABASE_URL")
   conn <- connectPostgreSQL (LB.packChars databseURL)
-  executeMany conn  "insert into track.item (id,title, url) values (?,?,?)" [(200, "Title New", "https://") :: (Integer, String, String)]
-  [(x1,x2,x3)] <- query_ conn "select id, title, url from users"
+--  executeMany conn  "insert into track.item (id,title, url) values (?,?,?)" [(200, "Title New", "https://") :: (Integer, String, String)]
+  [(x1,x2,x3)] <- query_ conn "select id, title, url from track.item"
   return $ Text.unpack x3 ++  Text.unpack x2 ++ " is " ++ show (x1 :: Int)
  
 
