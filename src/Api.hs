@@ -23,11 +23,11 @@ import Control.Monad.IO.Class
 import Servant.HTML.Blaze
 import Text.Blaze.Html5 hiding (main)
 import Parser 
-
+import Persist 
 
 -- | Endpoints ----------------------------------------------- 
        
-type ItemAllApi = "getAllItem" :> Get '[JSON] [Item]
+type ItemAllApi = "getAllItem" :> Get '[JSON] String
 --type ItemQueryApi = "vocabGetBy" :> Capture "itemId" Integer :> Get '[JSON] [Item]
 --type ItemDeleteApi = "itemDelete" :> Capture "itemId" Integer :> DeleteNoContent '[JSON] NoContent
 
@@ -40,10 +40,11 @@ server    = do
   itemAllApi -- :<|> itemQueryApi :<|> itemDeleteApi  
   
   where
-    itemAllApi ::   Handler [Item]
+    itemAllApi ::   Handler String
     itemAllApi = do
-      items <- liftIO retrieveItem
-      return [items] 
+     -- items <- liftIO retrieveItem
+      item <- liftIO persisitData
+      return item
 {-       
     itemQueryApi :: Integer ->  Handler [Item]
     itemQueryApi i = do

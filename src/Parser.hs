@@ -17,7 +17,8 @@ import qualified Network.HTTP.Conduit as NC
 
 import qualified Data.ByteString.Lazy.Char8 as LB
 import GHC.Generics
-import Data.Aeson 
+import Data.Aeson
+
 
 itemURL = "https://www.amazon.in/dp/B07JB8DWGT/?coliid=I267DRVBQ4ERVW&colid=3KKERNQ9EEMXC&psc=1&ref_=lv_ov_lig_dp_it"
 retrieveWeatherData = do
