@@ -21,7 +21,7 @@ persisitData = do
   databseURL  <- fmap (fromMaybe "No dataBase") (lookupEnv "DATABASE_URL")
   conn <- connectPostgreSQL (LB.packChars databseURL)
 --  executeMany conn  "insert into track.item (id,title, url) values (?,?,?)" [(200, "Title New", "https://") :: (Integer, String, String)]
-  xs <- liftIO $  query_ conn "select id, title, url  from track.itemm" :: IO [(Integer, Text.Text, Text.Text)]
+  xs <- liftIO $  query_ conn "select id, title, url  from track.item" :: IO [(Integer, Text.Text, Text.Text)]
   mapM  (\(x1,x2,x3) ->  return  (addText  x2 x3 (Text.pack ( show (x1 :: Integer))))  )  xs
  
  where
