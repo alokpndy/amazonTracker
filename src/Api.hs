@@ -27,7 +27,7 @@ import Persist
 
 -- | Endpoints ----------------------------------------------- 
        
-type ItemAllApi = "getAllItem" :> Get '[JSON] String
+type ItemAllApi = "getAllItem" :> Get '[JSON] [Text]
 --type ItemQueryApi = "vocabGetBy" :> Capture "itemId" Integer :> Get '[JSON] [Item]
 --type ItemDeleteApi = "itemDelete" :> Capture "itemId" Integer :> DeleteNoContent '[JSON] NoContent
 
@@ -40,7 +40,7 @@ server    = do
   itemAllApi -- :<|> itemQueryApi :<|> itemDeleteApi  
   
   where
-    itemAllApi ::   Handler String
+    itemAllApi ::   Handler [Text]
     itemAllApi = do
      -- items <- liftIO retrieveItem
       item <- liftIO persisitData
