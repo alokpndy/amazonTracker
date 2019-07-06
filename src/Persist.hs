@@ -26,8 +26,9 @@ conn <- connectPostgreSQL (LB.packChars databseURL)
 getAllItems :: Connection ->  IO [Item]
 getAllItems c = do
   xs <- liftIO $  query_ c "select *  from track.item" :: IO [(Int, Text.Text, Bool, Text.Text)]
-  ys <- mapM (\(x1,x2,x3,x4) -> getYs x1) xs 
-  return $ fmap (\(a,b,c,d) -> Item (Text.unpack b) a c (Text.unpack d) (fmap (\[(y1,y2)] -> PriceDetail  y1  y2) ys)) xs 
+  ys <- mapM (\(x1,x2,x3,x4) -> getYs x1) xs
+  prcs <- liftIO $  mapM (\[(y1,y2)] ->   return $ PriceDetail  y1  y2) ys
+  return $ fmap (\(a,b,c,d) -> Item (Text.unpack b) a c (Text.unpack d) (prcs)) xs 
 
   where
     getYs :: Int -> IO [(Integer, Integer)]
