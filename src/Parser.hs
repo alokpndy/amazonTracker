@@ -35,6 +35,8 @@ data PriceDetail =  PriceDetail
 
 instance ToJSON Item
 instance ToJSON PriceDetail
+instance FromJSON Item
+instance FromJSON PriceDetail
 
 mkItem :: String -> Int -> Bool -> String -> Integer -> Integer -> Item
 mkItem n q d u dt pr = Item n q d u (mkPriceDetail dt pr) 
