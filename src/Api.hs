@@ -11,6 +11,7 @@
 
 module Api where
 
+
 import Network.Wai.Handler.Warp (run)
 import Data.Aeson 
 import Servant
@@ -23,34 +24,40 @@ import Control.Monad.IO.Class
 import Servant.HTML.Blaze
 import Text.Blaze.Html5 hiding (main)
 import Parser 
-import Persist 
+import Persist
+import Data.Traversable
+import Database.PostgreSQL.Simple
+
+
+itemURL = "https://www.amazon.in/dp/B07JB8DWGT/?coliid=I267DRVBQ4ERVW&colid=3KKERNQ9EEMXC&psc=1&ref_=lv_ov_lig_dp_it"
+
 
 -- | Endpoints ----------------------------------------------- 
        
-type ItemAllApi = "getAllItem" :> Get '[JSON] [Text]
---type ItemQueryApi = "vocabGetBy" :> Capture "itemId" Integer :> Get '[JSON] [Item]
+type ItemAllApi = "getAllItem" :> Get '[JSON] [Item]
+type ItemAddApi = "addItenUrl" :> Capture "urls" [String] :> Get '[JSON] [Item]
 --type ItemDeleteApi = "itemDelete" :> Capture "itemId" Integer :> DeleteNoContent '[JSON] NoContent
 
-type Api = ItemAllApi -- :<|> ItemQueryApi :<|> ItemDeleteApi
+type Api = ItemAllApi :<|> ItemAddApi --  :<|> ItemDeleteApi
 
 
 -- | Server --------------------------------------------------      
-server :: Server Api
-server    = do
-  itemAllApi -- :<|> itemQueryApi :<|> itemDeleteApi  
+server ::  Connection -> Server Api
+server c = do
+  itemAllApi  :<|> itemAddApi --  :<|> itemDeleteApi  
   
   where
-    itemAllApi ::   Handler [Text]
+    itemAllApi ::   Handler [Item]
     itemAllApi = do
      -- items <- liftIO retrieveItem
-      item <- liftIO persisitData
+      item <- liftIO $ getAllItems c 
       return item
-{-       
-    itemQueryApi :: Integer ->  Handler [Item]
-    itemQueryApi i = do
-      items <- retrieveItem
-      return $ filter (\x -> itemId == i) items 
       
+    itemAddApi :: [String] ->  Handler [Item]
+    itemAddApi urls = do
+      items <-  liftIO $  traverse retrieveItem  urls 
+      return items  
+{-       
 
     itemDeleteApi :: Integer -> Handler NoContent
     itemDeleteApi i = do
@@ -60,10 +67,19 @@ server    = do
 
 
 
+instance  FromHttpApiData [String] where
+  parseQueryParam param = do
+     s  <- parseUrlPiece param :: Either Text [String] 
+     case s of
+       []   -> Left $ "Unspecifed Sort Order "
+       [x]  -> return  (x : [])
+       xs   -> return  xs
+      
+
 -- | Deploy --------------------------------------------------
-main2 :: Int -> IO ()
-main2 port = do
-  run port $ (serve (Proxy @Api) server)
+main2 :: Connection ->  Int -> IO ()
+main2 c port = do
+  run port $ (serve (Proxy @Api) (server c) )
 
              
 -- http://localhost:3000/getAllItem

@@ -35,6 +35,7 @@ dependencies:
                       - servant-blaze
                       - blaze-html
                       - postgresql-simple
+                      - hashable
 
 library:
   source-dirs: src

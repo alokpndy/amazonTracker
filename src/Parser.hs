@@ -18,25 +18,58 @@ import qualified Network.HTTP.Conduit as NC
 import qualified Data.ByteString.Lazy.Char8 as LB
 import GHC.Generics
 import Data.Aeson
+import Data.Hashable
 
 
-itemURL = "https://www.amazon.in/dp/B07JB8DWGT/?coliid=I267DRVBQ4ERVW&colid=3KKERNQ9EEMXC&psc=1&ref_=lv_ov_lig_dp_it"
-retrieveWeatherData = do
-     case parseURI itemURL of
-        Nothing  -> ioError . userError $ "Invalid URL"
-        Just uri -> (NC.simpleHttp itemURL)
 
+--------------- START ADT 
+data Item = Item
+  { name :: String, unique :: Int, del :: Bool, iurl :: String, priceRecord :: [PriceDetail] 
+  } deriving (Eq, Show, Generic)
 
-data Item = Item { pPrice  :: String, pTitle :: String, itemID :: Integer, idDeleted :: Bool } deriving (Eq, Show, Generic) 
+type TStamp = Integer
+type Price = Integer
+
+data PriceDetail =  PriceDetail
+  { dt :: TStamp, pr ::  Price } deriving (Eq, Show, Generic)
 
 instance ToJSON Item
+instance ToJSON PriceDetail
 
-retrieveItem = do
-  doc    <- retrieveWeatherData
+mkItem :: String -> Int -> Bool -> String -> Integer -> Integer -> Item
+mkItem n q d u dt pr = Item n q d u (mkPriceDetail dt pr) 
+
+mkPriceDetail :: Integer -> Integer -> [PriceDetail]
+mkPriceDetail d p = PriceDetail d p : []
+--------------- END ADT
+
+
+
+retrieveWeatherData url = do
+     case parseURI url of
+        Nothing  -> ioError . userError $ "Invalid URL"
+        Just uri -> (NC.simpleHttp url)
+
+
+retrieveItem :: String -> IO Item 
+retrieveItem url = do  
+  doc    <- retrieveWeatherData url
   price <- runX (getwhole $ LB.unpack doc)
   title <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>> getTitle)
-  return $  Item (parsePrice  $ LB.pack ( mconcat  price)) (stripNLandWh . mconcat$  title) 0 False
-  
+  print price
+  return $ 
+    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url 2019  ((read . mkDigit . parsePrice)  $ LB.pack ( mconcat  price))
+ 
+mkDigit :: String -> String 
+mkDigit [] = []
+mkDigit (x:xs)
+     | x == ','  =  mkDigit xs
+     | x == '.' = [] 
+     | otherwise = x : mkDigit xs
+
+hashURL :: String -> Int
+hashURL s = hash  s 
+
 parsePrice :: LB.ByteString -> String
 parsePrice bs = (LB.unpack . last . LB.words) bs 
  
@@ -46,7 +79,7 @@ getwhole file = readString [withParseHTML yes, withWarnings no] file >>>
                 deep (isElem >>> hasName "body" >>> getChildren) >>>
                 proc x -> do
                 productPrice <- listA getPrice -< x
-                returnA -<  (filterPrice $ filter (not . null) ( productPrice ))
+                returnA -<  (filterPrice $ filter (not . null) ( productPrice )) 
                 where
                   filterPrice xs = case xs of
                     [] -> ""
@@ -61,14 +94,16 @@ getTitle =  deep (isElem >>> hasName "h1" >>> getChildren ) >>>
             returnA -<    val 
         else returnA -<  atV
 
-getPrice = atTag "div" >>> getChildren >>> atTag "span" >>> getChildren >>>
+getPrice = atTag "div" >>>  getChildren >>> atTag "span" >>> 
     proc p -> do
-        atV <-  getAttrValue "class"  -< p
-        if  atV == "a-color-price" then  do
+        atV <-  getAttrValue "id"  -< p
+        if  atV == "priceblock_ourprice" then  do
             val <- deep getText   -< p
             returnA -<    val 
         else returnA -<  ""
 
+
+filterTag tag = processTopDown (filterA $  (hasName tag))
 
 stripNLandWh [] = ""
 stripNLandWh (x:xs)
