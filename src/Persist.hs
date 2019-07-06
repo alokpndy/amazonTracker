@@ -49,7 +49,7 @@ addItem conn s = do
   i <- retrieveItem s 
   executeMany conn  "insert into track.item (id,title, url) values (?,?,?)" [( (unique i), (name i), (iurl i)) :: (Int, String, String)]
   executeMany conn
-    "insert into track.prices (id,price,timestamp,itemid) values (?,?,?)" [( (unique i), (getCost (priceRecord  i)) , (2019), (unique i) ) :: (Int, Integer, Integer, Int)]
+    "insert into track.prices (id,price,timestamp,itemid) values (?,?,?,?)" [( (unique i), (getCost (priceRecord  i)) , (2019), (unique i) ) :: (Int, Integer, Integer, Int)]
   return  i  
  
  where
