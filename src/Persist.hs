@@ -31,11 +31,10 @@ getAllItems c = do
     ys -> do
        zs <- mapM (\(x1,x2,x3,x4) -> getYs x1) ys
        case zs of
+         [] -> return Nothing
          [[]] -> return Nothing
-         [xs]  -> do
-                 prcs <- liftIO $  mapM (\zz ->  case zz of
-                                  [] -> return []
-                                  [(y1,y2)] -> return $ [PriceDetail  y1  y2] ) zs
+         [ls]  -> do
+                 prcs <- liftIO $  mapM (\[(y1,y2)] -> return $ [PriceDetail  y1  y2] ) zs
                  return $ Just $ (fmap (\(a,b,c,d) -> Item (Text.unpack b) a c (Text.unpack d) (concat prcs)) ys)
       
     
