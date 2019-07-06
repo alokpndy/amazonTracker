@@ -36,23 +36,11 @@ getAllItems c = do
          ls  -> do
                  prcs <- liftIO $  (traverse . traverse) (\(y1,y2) -> return $ PriceDetail  y1  y2 ) zs
                  return $ Just $ (fmap (\(a,b,c,d) -> Item (Text.unpack b) a c (Text.unpack d) (concat prcs)) ys)
-      
-    
- 
 
   where
     getYs :: Int -> IO [(Integer, Integer)]
     getYs x1 =  query c "select track.prices.timestamp, track.prices.price from track.prices where track.prices.itemid = ?"  [x1]
 
-
-foo :: [[(Integer, Integer)]] ->   IO (Maybe [[PriceDetail]])
-foo zs = case zs of
-         [] -> return Nothing
-         [[]] -> return Nothing
-         ls  -> do
-                prcs <- liftIO $  (traverse . traverse) (\(y1,y2) -> return $ PriceDetail  y1  y2 ) zs
-                return  $ Just prcs 
-       
 
 
 -- Saves data to disk and then return hash of the item

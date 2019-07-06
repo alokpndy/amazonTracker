@@ -58,7 +58,7 @@ server c = do
       
     itemAddApi :: [String] ->  Handler [Item]
     itemAddApi urls = do
-      items <-  liftIO $  traverse retrieveItem  urls 
+      items <- liftIO $ traverse (addItem c) urls 
       return items  
 {-       
 
