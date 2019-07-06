@@ -29,9 +29,12 @@ getAllItems c = do
   case xs of
     [] -> return Nothing
     ys -> do
-       ys <- mapM (\(x1,x2,x3,x4) -> getYs x1) xs
-       prcs <- liftIO $  mapM (\[(y1,y2)] ->   return $ PriceDetail  y1  y2) ys
-       return $ Just $ (fmap (\(a,b,c,d) -> Item (Text.unpack b) a c (Text.unpack d) (prcs)) xs)
+       zs <- mapM (\(x1,x2,x3,x4) -> getYs x1) ys
+       case zs of
+         [] -> return Nothing
+         ss -> do
+           prcs <- liftIO $  mapM (\[(y1,y2)] ->   return $ PriceDetail  y1  y2) ss
+           return $ Just $ (fmap (\(a,b,c,d) -> Item (Text.unpack b) a c (Text.unpack d) (prcs)) xs)
       
     
  
