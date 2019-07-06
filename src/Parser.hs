@@ -33,6 +33,10 @@ type Price = Integer
 data PriceDetail =  PriceDetail
   { dt :: Integer, pr ::  Integer } deriving (Eq, Show, Generic)
 
+data ItemURL = ItemURL { url :: String } deriving (Eq, Show, Generic)
+
+instance ToJSON ItemURL
+instance FromJSON ItemURL
 instance ToJSON Item
 instance ToJSON PriceDetail
 instance FromJSON Item

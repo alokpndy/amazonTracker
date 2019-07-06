@@ -36,7 +36,7 @@ itemURL = "https://www.amazon.in/dp/B07JB8DWGT/?coliid=I267DRVBQ4ERVW&colid=3KKE
        
 type ItemAllApi = "getAllItem" :> Get '[JSON] (Maybe [Item])
 --type ItemAddApi = "addItenUrl" :> Capture "urls" String :> Get '[JSON] Item
-type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] String :> Post '[JSON] Item
+type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] Item
 --type ItemDeleteApi = "itemDelete" :> Capture "itemId" Integer :> DeleteNoContent '[JSON] NoContent
 
 type Api = ItemAllApi :<|> ItemAddApi --  :<|> ItemDeleteApi
@@ -56,9 +56,9 @@ server c = do
         Nothing -> return Nothing
         Just xs -> return $ Just xs
 
-    itemAddApi :: String ->  Handler Item
-    itemAddApi url = do
-      item <- liftIO $ addItem c url
+    itemAddApi :: ItemURL ->  Handler Item
+    itemAddApi i = do
+      item <- liftIO $ addItem c (url i)
       return item 
      
  {- 
