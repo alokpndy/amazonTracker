@@ -31,7 +31,7 @@ type TStamp = Integer
 type Price = Integer
 
 data PriceDetail =  PriceDetail
-  { dt :: TStamp, pr ::  Price } deriving (Eq, Show, Generic)
+  { dt :: Integer, pr ::  Integer } deriving (Eq, Show, Generic)
 
 instance ToJSON Item
 instance ToJSON PriceDetail
