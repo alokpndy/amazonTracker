@@ -28,7 +28,7 @@ import Persist
 import Data.Traversable
 import Database.PostgreSQL.Simple
 import Data.Time.Clock 
-import Control.Concurrent (threadDelay)
+
 
 
 -- | Endpoints ----------------------------------------------- 
@@ -72,15 +72,8 @@ instance  FromHttpApiData [String] where
 main2 :: Connection ->  Int -> IO ()
 main2 c port = do
   run port $ (serve (Proxy @Api) (server c) )
-  putStrLn "START"
-  poll c 
 
 
-poll :: Connection -> IO () 
-poll conn = do
-         updateItem conn 
-         threadDelay (20 * 10^6)
-         poll conn 
   
  
   
