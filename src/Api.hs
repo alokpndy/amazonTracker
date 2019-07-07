@@ -35,15 +35,16 @@ import Data.Time.Clock
        
 type ItemAllApi = "getAllItem" :> Get '[JSON] (Maybe [Item])
 type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] Item
+type UpdateExistingApi = "updateExisting" :> PutNoContent '[JSON] NoContent
 
 
-type Api = ItemAllApi :<|> ItemAddApi  
+type Api = ItemAllApi :<|> ItemAddApi  :<|> UpdateExistingApi 
 
 
 -- | Server --------------------------------------------------      
 server ::  Connection -> Server Api
 server c = do
-  itemAllApi  :<|> itemAddApi  
+  itemAllApi  :<|> itemAddApi  :<|> itemUpdateApi 
   
   where
     itemAllApi ::   Handler (Maybe [Item])
@@ -58,6 +59,10 @@ server c = do
       item <- liftIO $ addItem c (url i)
       return item
 
+    itemUpdateApi :: Handler NoContent
+    itemUpdateApi = do
+      liftIO $ updateItem c
+      return NoContent
 
 instance  FromHttpApiData [String] where
   parseQueryParam param = do
