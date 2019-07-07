@@ -19,7 +19,17 @@ import qualified Data.ByteString.Lazy.Char8 as LB
 import GHC.Generics
 import Data.Aeson
 import Data.Hashable
+import Data.Time.Clock 
 
+{-
+
+UTCTime	 
+utctDay :: Day	
+the day
+utctDayTime :: DiffTime	
+the time from midnight, 0 <= t < 86401s (because of leap-seconds)
+
+-}
 
 
 --------------- START ADT 
@@ -31,7 +41,7 @@ type TStamp = Integer
 type Price = Integer
 
 data PriceDetail =  PriceDetail
-  { dt :: Integer, pr ::  Integer } deriving (Eq, Show, Generic)
+  { dt :: UTCTime, pr ::  Integer } deriving (Eq, Show, Generic)
 
 data ItemURL = ItemURL { url :: String } deriving (Eq, Show, Generic)
 
@@ -42,10 +52,10 @@ instance ToJSON PriceDetail
 instance FromJSON Item
 instance FromJSON PriceDetail
 
-mkItem :: String -> Int -> Bool -> String -> Integer -> Integer -> Item
+mkItem :: String -> Int -> Bool -> String -> UTCTime -> Integer -> Item
 mkItem n q d u dt pr = Item n q d u (mkPriceDetail dt pr) 
 
-mkPriceDetail :: Integer -> Integer -> [PriceDetail]
+mkPriceDetail :: UTCTime -> Integer -> [PriceDetail]
 mkPriceDetail d p = PriceDetail d p : []
 --------------- END ADT
 
@@ -62,9 +72,9 @@ retrieveItem url = do
   doc    <- retrieveWeatherData url
   price <- runX (getwhole $ LB.unpack doc)
   title <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>> getTitle)
-  print price
+  time <- getCurrentTime
   return $ 
-    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url 2019  ((read . mkDigit . parsePrice)  $ LB.pack ( mconcat  price))
+    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url (time)  ((read . mkDigit . parsePrice)  $ LB.pack ( mconcat  price))
  
 mkDigit :: String -> String 
 mkDigit [] = []

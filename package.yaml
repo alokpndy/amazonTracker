@@ -36,6 +36,7 @@ dependencies:
                       - blaze-html
                       - postgresql-simple
                       - hashable
+                      - time 
 
 library:
   source-dirs: src

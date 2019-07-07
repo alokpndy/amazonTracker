@@ -27,7 +27,7 @@ import Parser
 import Persist
 import Data.Traversable
 import Database.PostgreSQL.Simple
-
+import Data.Time.Clock 
 
 itemURL = "https://www.amazon.in/dp/B07JB8DWGT/?coliid=I267DRVBQ4ERVW&colid=3KKERNQ9EEMXC&psc=1&ref_=lv_ov_lig_dp_it"
 
@@ -35,45 +35,29 @@ itemURL = "https://www.amazon.in/dp/B07JB8DWGT/?coliid=I267DRVBQ4ERVW&colid=3KKE
 -- | Endpoints ----------------------------------------------- 
        
 type ItemAllApi = "getAllItem" :> Get '[JSON] (Maybe [Item])
---type ItemAddApi = "addItenUrl" :> Capture "urls" String :> Get '[JSON] Item
 type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] Item
---type ItemDeleteApi = "itemDelete" :> Capture "itemId" Integer :> DeleteNoContent '[JSON] NoContent
 
-type Api = ItemAllApi :<|> ItemAddApi --  :<|> ItemDeleteApi
+
+type Api = ItemAllApi :<|> ItemAddApi  
 
 
 -- | Server --------------------------------------------------      
 server ::  Connection -> Server Api
 server c = do
-  itemAllApi  :<|> itemAddApi --  :<|> itemDeleteApi  
+  itemAllApi  :<|> itemAddApi  
   
   where
     itemAllApi ::   Handler (Maybe [Item])
     itemAllApi = do
-     -- items <- liftIO retrieveItem
       item <- liftIO $ getAllItems c
       case item of
         Nothing -> return Nothing
         Just xs -> return $ Just xs
-
+        
     itemAddApi :: ItemURL ->  Handler Item
     itemAddApi i = do
       item <- liftIO $ addItem c (url i)
-      return item 
-     
- {- 
-    itemAddApi :: String ->  Handler Item
-    itemAddApi url = do
-      item <- liftIO $ addItem c url
-      return item  
-      
-
-    itemDeleteApi :: Integer -> Handler NoContent
-    itemDeleteApi i = do
-      items <- retrieveItem
-      filter (\x -> itemId == i) items
--}
-
+      return item
 
 
 instance  FromHttpApiData [String] where
