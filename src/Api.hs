@@ -28,8 +28,7 @@ import Persist
 import Data.Traversable
 import Database.PostgreSQL.Simple
 import Data.Time.Clock 
-
-itemURL = "https://www.amazon.in/dp/B07JB8DWGT/?coliid=I267DRVBQ4ERVW&colid=3KKERNQ9EEMXC&psc=1&ref_=lv_ov_lig_dp_it"
+import Control.Concurrent (threadDelay)
 
 
 -- | Endpoints ----------------------------------------------- 
@@ -73,6 +72,19 @@ instance  FromHttpApiData [String] where
 main2 :: Connection ->  Int -> IO ()
 main2 c port = do
   run port $ (serve (Proxy @Api) (server c) )
+  putStrLn "START"
+  poll c 
+
+
+poll :: Connection -> IO () 
+poll conn = do
+         updateItem conn 
+         threadDelay (20 * 10^6)
+         poll conn 
+  
+ 
+  
+  
 
              
 -- http://localhost:3000/getAllItem

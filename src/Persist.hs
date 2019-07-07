@@ -68,16 +68,28 @@ addItem conn s = do
    getCost :: [PriceDetail] -> Integer
    getCost (p:ps) =  pr p   
 
-   parsePrice :: String -> String 
-   parsePrice [] = []
-   parsePrice (x:xs)
-     | x == ','  =  parsePrice xs
-     | x == '.' = [] 
-     | otherwise = x : parsePrice xs
-     
-
    
-
+   
+updateItem :: Connection  -> IO ()
+updateItem conn  = do
+   x <- getAllItems conn :: IO (Maybe [Item])
+   (traverse . traverse)  (updatePrice conn) x
+   return () 
+ 
+ 
+   
+   
   
 
+updatePrice :: Connection -> Item -> IO ()  
+updatePrice conn s = do
+  i <- retrieveItem ( iurl s) 
+  executeMany conn
+    "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
+  return  ()  
+ 
+ where
+  
+   getCost :: [PriceDetail] -> Integer
+   getCost (p:ps) =  pr p   
 

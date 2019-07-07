@@ -6,6 +6,8 @@ import System.Environment (lookupEnv)
 import Database.PostgreSQL.Simple
 import qualified Data.ByteString.Internal as LB
 
+
+
 main :: IO ()
 main = do
   {-
@@ -23,7 +25,10 @@ main = do
     Nothing -> do
                conn <- connect defaultConnectInfo { connectDatabase = "amazonlocaldb" }
                main2 conn (read port)
+             
     Just c ->  do
                conn <- connectPostgreSQL (LB.packChars c)
                main2 conn (read port)
-              
+           
+   
+
