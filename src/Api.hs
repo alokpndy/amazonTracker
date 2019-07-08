@@ -35,16 +35,16 @@ import Data.Time.Clock
        
 type ItemAllApi = "getAllItem" :> Get '[JSON] (Maybe [Item])
 type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] Item
-type UpdateExistingApi = "updateExisting" :> PutNoContent '[JSON] NoContent
+type UpdateExistingApi = "updateExisting" :>  Get '[JSON] Bool 
+type DeleteItemApi = "deleteItem" :> Capture "id" Int  :> Delete '[JSON] NoContent  -- make DLETE request using curl 
 
-
-type Api = ItemAllApi :<|> ItemAddApi  :<|> UpdateExistingApi 
+type Api = ItemAllApi :<|> ItemAddApi  :<|> UpdateExistingApi :<|> DeleteItemApi
 
 
 -- | Server --------------------------------------------------      
 server ::  Connection -> Server Api
 server c = do
-  itemAllApi  :<|> itemAddApi  :<|> itemUpdateApi 
+  itemAllApi  :<|> itemAddApi  :<|>  itemUpdateApi  :<|> deleteApi 
   
   where
     itemAllApi ::   Handler (Maybe [Item])
@@ -59,10 +59,16 @@ server c = do
       item <- liftIO $ addItem c (url i)
       return item
 
-    itemUpdateApi :: Handler NoContent
-    itemUpdateApi = do
+    itemUpdateApi ::  Handler Bool 
+    itemUpdateApi   = do
       liftIO $ updateItem c
+      return True 
+
+    deleteApi :: Int -> Handler NoContent
+    deleteApi i =do
+      liftIO $ delItems c i
       return NoContent
+      
 
 instance  FromHttpApiData [String] where
   parseQueryParam param = do

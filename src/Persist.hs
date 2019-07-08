@@ -68,28 +68,29 @@ addItem conn s = do
    getCost :: [PriceDetail] -> Integer
    getCost (p:ps) =  pr p   
 
-   
+delItems :: Connection -> Int -> IO ()
+delItems  c x1 =  do
+  liftIO $ execute c "delete from track.items where track.items.id = ?" (Only x1) 
+  return () 
    
 updateItem :: Connection  -> IO ()
 updateItem conn  = do
-   x <- getAllItems conn :: IO (Maybe [Item])
-   (traverse . traverse)  (updatePrice conn) x
+   xs <- getAllItems conn :: IO (Maybe [Item])
+   (traverse . traverse)  (updatePrice conn) xs
    return () 
- 
- 
-   
-   
-  
 
-updatePrice :: Connection -> Item -> IO ()  
+updatePrice :: Connection -> Item  -> IO ()  
 updatePrice conn s = do
-  i <- retrieveItem ( iurl s) 
-  executeMany conn
-    "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
-  return  ()  
+  i <- retrieveItem ( iurl s)  -- New data of asked Item
+  oldPrice <-  return $ (pr . last . priceRecord) s  :: IO Integer  -- Old data of asked item
+  case ( (pr . last . priceRecord) i) == oldPrice of
+    True -> do
+      return ()
+    False -> do
+      executeMany conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
+      return  ()  
  
  where
-  
    getCost :: [PriceDetail] -> Integer
    getCost (p:ps) =  pr p   
 
