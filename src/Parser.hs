@@ -94,8 +94,9 @@ atTag tag = deep (isElem >>> hasName tag)
 getwhole file = readString [withParseHTML yes, withWarnings no] file >>>
                 deep (isElem >>> hasName "body" >>> getChildren) >>>
                 proc x -> do
-                productPrice <- listA getPrice -< x
-                returnA -<  (filterPrice $ filter (not . null) ( productPrice )) 
+                    dPrice <- listA getPriceD -< x
+                    nPrice <- listA getPriceN  -< x
+                    returnA -<  (filterPrice $ filter (not . null) ( if (length dPrice > 1) then dPrice else nPrice )) 
                 where
                   filterPrice xs = case xs of
                     [] -> ""
@@ -110,15 +111,6 @@ getTitle =  deep (isElem >>> hasName "h1" >>> getChildren ) >>>
             returnA -<    val 
         else returnA -<  atV
 
-getPrice = atTag "div" >>>  getChildren >>> atTag "span" >>> 
-    proc p -> do
-        atV <-  getAttrValue "id"  -< p
-        if  atV == "priceblock_ourprice" then  do
-            val <- deep getText   -< p
-            returnA -<    val 
-        else returnA -<  ""
-
-
 filterTag tag = processTopDown (filterA $  (hasName tag))
 
 stripNLandWh [] = ""
@@ -126,3 +118,21 @@ stripNLandWh (x:xs)
   | x == '\n' = stripNLandWh xs
   | x == ' ' = stripNLandWh xs
   | otherwise = x : stripNLandWh xs 
+
+
+
+getPriceN = atTag "div" >>>  getChildren >>> atTag "span" >>> 
+    proc p -> do
+        atV <-  getAttrValue "id"  -< p
+        if  atV == "priceblock_ourprice" then  do
+            val <- deep getText   -< p
+            returnA -<    val 
+        else returnA -<  ""
+
+getPriceD = atTag "div" >>>  getChildren >>> atTag "span" >>> 
+    proc p -> do
+        atV <-  getAttrValue "id"  -< p
+        if  atV == "priceblock_dealprice" then  do
+            val <- deep getText   -< p
+            returnA -<    val 
+        else returnA -<  ""

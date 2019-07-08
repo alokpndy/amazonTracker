@@ -85,8 +85,10 @@ updatePrice conn s = do
   oldPrice <-  return $ (pr . last . priceRecord) s  :: IO Integer  -- Old data of asked item
   case ( (pr . last . priceRecord) i) == oldPrice of
     True -> do
+      putStrLn "Same price"
       return ()
     False -> do
+      putStrLn "Diff price"
       executeMany conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
       return  ()  
  
