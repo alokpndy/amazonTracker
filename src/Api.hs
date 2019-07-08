@@ -28,14 +28,14 @@ import Persist
 import Data.Traversable
 import Database.PostgreSQL.Simple
 import Data.Time.Clock 
-
+import Control.Concurrent.Async
 
 
 -- | Endpoints ----------------------------------------------- 
        
 type ItemAllApi = "getAllItem" :> Get '[JSON] (Maybe [Item])
 type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] Item
-type UpdateExistingApi = "updateExisting" :> Put '[JSON] NoContent 
+type UpdateExistingApi = "updateExisting" :> PutAccepted '[JSON] NoContent 
 type DeleteItemApi = "deleteItem" :> Capture "id" Int  :> Delete '[JSON] NoContent  -- make DLETE request using curl 
 
 type Api = ItemAllApi :<|> ItemAddApi  :<|> UpdateExistingApi :<|> DeleteItemApi
@@ -61,7 +61,7 @@ server c = do
 
     itemUpdateApi ::  Handler NoContent 
     itemUpdateApi   = do
-      liftIO $ updateItem c
+      liftIO $ async $  updateItem c
       return NoContent 
 
     deleteApi :: Int -> Handler NoContent
