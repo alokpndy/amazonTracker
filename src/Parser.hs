@@ -88,7 +88,9 @@ hashURL s = hash  s
 
 parsePrice :: LB.ByteString -> String
 parsePrice bs = (LB.unpack . last . LB.words) bs 
- 
+
+mkPrice s = (read . mkDigit . parsePrice) s
+  
 atTag tag = deep (isElem >>> hasName tag)
 
 getwhole file = readString [withParseHTML yes, withWarnings no] file >>>
@@ -96,7 +98,7 @@ getwhole file = readString [withParseHTML yes, withWarnings no] file >>>
                 proc x -> do
                     dPrice <- listA getPriceD -< x
                     nPrice <- listA getPriceN  -< x
-                    returnA -<  (filterPrice $ filter (not . null) ( if (length dPrice > 1) then dPrice else nPrice )) 
+                    returnA -<  (filterPrice $ filter (not . null) (if (length (mconcat dPrice) > 1) then dPrice else nPrice )) 
                 where
                   filterPrice xs = case xs of
                     [] -> ""
