@@ -29,7 +29,7 @@ import Persist
 import Data.Traversable
 import Database.PostgreSQL.Simple
 import Data.Time.Clock 
-import Control.Concurrent.Async
+import qualified Control.Concurrent.Async as AS
 
 import           Servant.HTML.Blaze
 import qualified Text.Blaze.Html5   as H
@@ -78,8 +78,8 @@ server c = do
       return NoContent 
 
     deleteApi :: Int -> Handler NoContent
-    deleteApi i =do
-      liftIO $ delItems c i
+    deleteApi i = do
+      liftIO $ AS.async (delItems c i)
       return NoContent
       
 
