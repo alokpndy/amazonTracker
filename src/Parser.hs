@@ -19,17 +19,9 @@ import qualified Data.ByteString.Lazy.Char8 as LB
 import GHC.Generics
 import Data.Aeson
 import Data.Hashable
-import Data.Time.Clock 
+import Data.Time.Clock
+import Control.Monad.IO.Class
 
-{-
-
-UTCTime	 
-utctDay :: Day	
-the day
-utctDayTime :: DiffTime	
-the time from midnight, 0 <= t < 86401s (because of leap-seconds)
-
--}
 
 
 --------------- START ADT 
@@ -52,11 +44,11 @@ instance ToJSON PriceDetail
 instance FromJSON Item
 instance FromJSON PriceDetail
 
-mkItem :: String -> Int -> Bool -> String -> UTCTime -> Integer -> Item
-mkItem n q d u dt pr = Item n q d u (mkPriceDetail dt pr) 
+mkItem :: String -> Int -> Bool -> String -> UTCTime -> Maybe String -> Maybe Item
+mkItem n q d u dt pr = Item n q d u <$> (mkPriceDetail dt pr) 
 
-mkPriceDetail :: UTCTime -> Integer -> [PriceDetail]
-mkPriceDetail d p = PriceDetail d p : []
+mkPriceDetail :: UTCTime -> Maybe String  -> Maybe [PriceDetail]
+mkPriceDetail t ms = (fmap (\x -> [PriceDetail t ((read . mkDigit . parsePrice)  $ LB.pack x)] ) ms) 
 --------------- END ADT
 
 
@@ -67,14 +59,14 @@ retrieveWeatherData url = do
         Just uri -> (NC.simpleHttp url)
 
 
-retrieveItem :: String -> IO Item 
+retrieveItem :: String -> IO (Maybe Item) 
 retrieveItem url = do  
   doc    <- retrieveWeatherData url
-  price <- runX (getwhole $ LB.unpack doc)
+  price <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>>  getAnyPrice)
   title <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>> getTitle)
   time <- getCurrentTime
   return $ 
-    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url (time)  ((read . mkDigit . parsePrice)  $ LB.pack ( mconcat  price))
+    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url (time)  (mconcat price) 
  
 mkDigit :: String -> String 
 mkDigit [] = []
@@ -91,19 +83,8 @@ parsePrice bs = (LB.unpack . last . LB.words) bs
 
 mkPrice s = (read . mkDigit . parsePrice) s
   
-atTag tag = deep (isElem >>> hasName tag)
 
-getwhole file = readString [withParseHTML yes, withWarnings no] file >>>
-                deep (isElem >>> hasName "body" >>> getChildren) >>>
-                proc x -> do
-                    dPrice <- listA getPriceD -< x
-                    nPrice <- listA getPriceN  -< x
-                    returnA -<  (filterPrice $ filter (not . null) (if (length (mconcat dPrice) > 1) then dPrice else nPrice )) 
-                where
-                  filterPrice xs = case xs of
-                    [] -> ""
-                    [x] -> x
-                    (x:xs) -> x 
+atTag tag = deep (isElem >>> hasName tag)
                         
 getTitle =  deep (isElem >>> hasName "h1" >>> getChildren ) >>>
     proc p -> do
@@ -113,8 +94,6 @@ getTitle =  deep (isElem >>> hasName "h1" >>> getChildren ) >>>
             returnA -<    val 
         else returnA -<  atV
 
-filterTag tag = processTopDown (filterA $  (hasName tag))
-
 stripNLandWh [] = ""
 stripNLandWh (x:xs)
   | x == '\n' = stripNLandWh xs
@@ -123,18 +102,22 @@ stripNLandWh (x:xs)
 
 
 
-getPriceN = atTag "div" >>>  getChildren >>> atTag "span" >>> 
+getAnyPrice =  atTag "div" >>>  getChildren >>> atTag "span" >>> 
     proc p -> do
-        atV <-  getAttrValue "id"  -< p
-        if  atV == "priceblock_ourprice" then  do
-            val <- deep getText   -< p
-            returnA -<    val 
-        else returnA -<  ""
+        sp <- getSalePrice3  -< p
+        case sp of
+          (x:xs) -> returnA -<  Just (x:xs)
+          ""     -> do
+              d3 <- getPriceD3 -< p
+              case sp of
+                 (y:ys) -> returnA -<  Just (y:ys)
+                 ""     -> do
+                        d3 <- getPriceD3 -< p
+                        case d3 of
+                            (z:zs) -> returnA -<  Just (z:zs)
+                            ""    -> returnA -< Nothing 
+              
 
-getPriceD = atTag "div" >>>  getChildren >>> atTag "span" >>> 
-    proc p -> do
-        atV <-  getAttrValue "id"  -< p
-        if  atV == "priceblock_dealprice" then  do
-            val <- deep getText   -< p
-            returnA -<    val 
-        else returnA -<  ""
+getSalePrice3 =  hasAttrValue "id" (== "priceblock_saleprice") >>>  deep getText 
+getPriceD3 =    (hasAttrValue "id" (== "priceblock_dealprice")) >>>  deep getText
+getPriceN3 =    (hasAttrValue "id" (== "priceblock_ourprice")) >>>  deep getText

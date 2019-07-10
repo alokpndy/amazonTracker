@@ -41,7 +41,7 @@ type HomeApi  = Get '[HTML] Homepage
 type Homepage = H.Html
        
 type ItemAllApi = "getAllItem" :> Get '[JSON] (Maybe [Item])
-type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] Item
+type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] (Maybe Item)
 type UpdateExistingApi = "updateExisting" :> PutAccepted '[JSON] NoContent 
 type DeleteItemApi = "deleteItem" :> Capture "id" Int  :> Delete '[JSON] NoContent  -- make DLETE request using curl 
 
