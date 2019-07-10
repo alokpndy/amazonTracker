@@ -74,7 +74,7 @@ server c = do
 
     itemUpdateApi ::  Handler NoContent 
     itemUpdateApi   = do
-      liftIO $  updateItem c
+      liftIO $ AS.async $ updateItem c
       return NoContent 
 
     deleteApi :: Int -> Handler NoContent
