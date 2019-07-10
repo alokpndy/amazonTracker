@@ -40,7 +40,7 @@ import Text.Blaze.Html5.Attributes as A
 type HomeApi  = Get '[HTML] Homepage
 type Homepage = H.Html
        
-type ItemAllApi = "getAllItem" :> Get '[JSON] (Maybe [Item])
+type ItemAllApi = "getAllItem" :> Get '[JSON] [Item]
 type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] (Maybe Item)
 type UpdateExistingApi = "updateExisting" :> PutAccepted '[JSON] NoContent 
 type DeleteItemApi = "deleteItem" :> Capture "id" Int  :> Delete '[JSON] NoContent  -- make DLETE request using curl 
@@ -60,17 +60,17 @@ server c = do
       return $ myHome item
   
     
-    itemAllApi ::   Handler (Maybe [Item])
+    itemAllApi ::   Handler  [Item]
     itemAllApi = do
       item <- liftIO $ getAllItems c
       case item of
-        Nothing -> return Nothing
-        Just xs -> return $ Just xs
+        [] -> return []
+        xs -> return  xs
         
-    itemAddApi :: ItemURL ->  Handler Item
+    itemAddApi :: ItemURL ->  Handler (Maybe Item)
     itemAddApi i = do
-      item <- liftIO $ addItem c (url i)
-      return item
+      maybeyItem <- liftIO $ addItem c (url i)
+      return maybeyItem
 
     itemUpdateApi ::  Handler NoContent 
     itemUpdateApi   = do
@@ -98,25 +98,27 @@ main2 c port = do
   run port $ (serve (Proxy @Api) (server c) )
 
 
-myHome :: Maybe [Item]  -> Homepage
+myHome :: [Item]  -> Homepage
 myHome it = H.docTypeHtml $ do
-    case ((fmap . fmap) makeTable it) of
-      Nothing -> do
+    case (fmap makeTable it) of
+      [] -> do
          H.head $ do
              H.title "LoneFox: Amazon price tracker"
              H.body $ do
                H.h1 "Add Item to Track"
               
-      Just i -> do
-          H.head $ do
-             H.title ! A.style "width: 511px;" $ h1 ! A.style "text-align: center;" $ "LoneFox: amazon price tracker"
-            
+      i -> do
+       H.head $ do
+          H.title "LoneFox: Amazon price tracker"
+          h1 ! class_ "site-title" ! A.style "text-align: center;" $ mempty
+          H.body $ do
+             showHeaderHTML
              H.table $ H.style $ toHtml ("width: 516px; border-color: rgba(34, 0, 51, 0)" :: Text)
              mapM_  (\(x1,x2,x3,x4,x5,x8,x6,x7) ->  showHtml x1 x2 x3 x4 x5 x8 x6 x7 ) i 
              return ()
 
 makeTable :: Item -> (Html, AttributeValue, Html, Html, Html, Html, Html, Html) --  name url addP addD lowPrice cPrice cDate
-makeTable it =  ((H.toHtml .  Parser.name) it, (H.toValue . iurl) it,
+makeTable it =  ((H.toHtml .  take 40 . (\x -> x ++ ".....................................") . (Parser.name)) it, (H.toValue . iurl) it,
                 ((H.toHtml . show . getAddedtPrice . priceRecord) it),
                 ((H.toHtml . getAddedtDate . priceRecord) it),
                 ((H.toHtml . show . getAvgPrice . priceRecord) it),
@@ -162,26 +164,33 @@ getAvgPrice it = case it of
                 
      
 
-showHtml  name url addP addD lowPrice lowDate cPrice cDate = do 
+
+showHtml  name url addP addD lowPrice lowDate cPrice cDate = do
+  table ! A.style "margin-left: auto; margin-right: auto;" ! width "70%" $ tbody $ do
+    tr $ do
+        td ! A.style "width: 40%; text-align: left;" $ h4 $ do
+            strong $ a ! href "Link  " ! target url ! rel "noopener" $ "<>"
+            name
+        td ! A.style "width: 20%; text-align: right;" $ do
+            h4 ! class_ "line-height:0.1;" $ H.span ! A.style "color: #808080;" $ addP
+            H.span ! A.style "color: #808080;" $ addD
+        td ! A.style "width: 20%; text-align: right;" $ do
+            h4 ! class_ "line-height:0.1;" $ H.span ! A.style "color: #808080;" $ lowPrice
+            H.span ! A.style "color: #808080;" $ lowDate
+        td ! A.style "width: 20%; text-align: right;" $ do
+            h4 ! class_ "line-height:0.1;" $ H.span ! A.style "color: #1c6bf4;" $ cPrice
+            H.span ! A.style "color: #1c6bf4;" $ cDate
   p mempty
-  table ! A.style "height: 98px; width: 90%; margin-left: auto; margin-right: auto;" $ tbody $ do
-    tr $ td ! A.style "width: 511px;" $ do
-        h1 mempty
-        table ! A.style "height: 99px; margin-left: auto; margin-right: auto;" ! width "500" $ tbody $ tr $ td ! A.style "width: 440px;" $ do
-            h2 ! A.style "text-align: left;" $ do
-                strong $ a ! href "Link" ! target url ! rel "noopener" $ "link  "
-                name
-           -- h2 $ H.span ! A.style "color: #000000;" $ strong $ a ! A.style "color: #000000;" ! href url ! target "_blank" ! rel "noopener" $ name
 
-            table ! A.style "height: 56px; margin-left: auto; margin-right: auto;" ! width "100%" $ tbody $ tr $ do
-              
-                td ! A.style "width: 138.34375px; text-align: left;" $ do
-                    h3 ! class_ "line-height:0.1;" $ H.span ! A.style "color: #808080;" $ addP
-                    p $ H.span ! A.style "color: #808080;" $ addD
-                td ! A.style "width: 138.34375px;" $ do
-                    h3 ! class_ "line-height:0.1; text-align: left;" $ H.span ! A.style "color: #808080;" $ lowPrice
-                    p $ H.span ! A.style "color: #808080;" $ lowDate
-                td ! A.style "width: 138.34375px; text-align: left;" $ do
-                    h3 ! class_ "line-height:0.1;" $ H.span ! A.style "color: #008000;" $ cPrice
-                    p cDate
-
+showHeaderHTML = do
+ 
+  table ! A.style "margin-left: auto; margin-right: auto;" ! width "70%" $ tbody $ do
+    tr $ do
+        td ! A.style "text-align: left; width: 40%;" $ p $ H.span ! A.style "color: #333333;" $ strong "Name of Item"
+        td ! A.style "width: 20%; text-align: right;" $ p ! class_ "line-height:0.1;" $ H.span ! A.style "color: #333333;" $ strong "Added On"
+        td ! A.style "width:20%; text-align: right;" $ p ! class_ "line-height:0.1;" $ H.span ! A.style "color: #333333;" $ strong "Lowest"
+        td ! A.style "width: 20%; text-align: right;" $ p ! class_ "line-height:0.1;" $ H.span ! A.style "color: #333333;" $ strong "Current"
+   
+  hr
+  p mempty
+ 

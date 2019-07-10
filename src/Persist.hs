@@ -28,20 +28,20 @@ databseURL  <- fmap (fromMaybe "No dataBase") (lookupEnv "DATABASE_URL")
 conn <- connectPostgreSQL (LB.packChars databseURL)
 -}
 
-getAllItems :: Connection ->  IO (Maybe [Item])
+getAllItems :: Connection ->  IO [Item]
 getAllItems c = do
   xs <- liftIO $  query_ c "select *  from track.items" :: IO [(Int, Text.Text, Bool, Text.Text)]
   case xs of
-    [] -> return Nothing
+    [] -> return []
     ys -> do
        case ys of
-         [] -> return Nothing
+         [] -> return []
          ls  -> do
                  prcs <- liftIO $  (traverse) (\(y1,y2,y3,y4) -> do 
                                                   ps <-  (fmap . fmap) (\(x1,x2) -> PriceDetail (eitherRight  x1)  x2) (getYs c y1)  
                                                   return $ Item (Text.unpack y2) y1 y3 (Text.unpack y4) (ps)
                                                ) ls 
-                 liftIO $ return $ Just prcs
+                 liftIO $ return  prcs
                  
                  
 getYs :: Connection -> Int -> IO [(LocalTimestamp , Integer)]
@@ -53,15 +53,18 @@ eitherRight x =  read $ show x
 
               
 -- Saves data to disk and then return hash of the item
-addItem :: Connection -> String ->  IO Item  
-addItem conn s = do
-  i <- retrieveItem s 
-  executeMany conn  "insert into track.items (id,title, url) values (?,?,?)" [( (unique i), (name i), (iurl i)) :: (Int, String, String)]
-  executeMany conn
-    "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
-  return  i  
+addItem ::  Connection -> String ->  IO (Maybe Item)  
+addItem  conn s = do 
+  getI <- retrieveItem s
+  case getI of
+    Nothing -> return Nothing
+    Just i -> do 
+      executeMany conn  "insert into track.items (id,title, url) values (?,?,?)" [( (unique i), (name i), (iurl i)) :: (Int, String, String)]
+      executeMany conn "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
+      return  $  getI  
  
  where
+
    addText :: Text.Text -> Text.Text -> Text.Text -> Text.Text
    addText x y z = Text.concat  $ x : y : z : []
    
@@ -74,23 +77,25 @@ delItems  c x1 =  do
   return () 
    
 updateItem :: Connection  -> IO ()
-updateItem conn  = do
-   xs <- getAllItems conn :: IO (Maybe [Item])
-   (traverse . traverse)  (updatePrice conn) xs
+updateItem  conn  = do
+   xs <- getAllItems conn :: IO [Item]
+   traverse  (updatePrice conn) xs
    return () 
 
 updatePrice :: Connection -> Item  -> IO ()  
 updatePrice conn s = do
-  i <- retrieveItem ( iurl s)  -- New data of asked Item
   oldPrice <-  return $ (pr . last . priceRecord) s  :: IO Integer  -- Old data of asked item
-  case ( (pr . last . priceRecord) i) == oldPrice of
-    True -> do
-      putStrLn "Same price"
-      return ()
-    False -> do
-      putStrLn "Diff price"
-      executeMany conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
-      return  ()  
+  oldURL <-  return $ iurl s  :: IO String
+  j <- retrieveItem  oldURL :: IO(Maybe Item)
+  case j of
+    Nothing -> return ()
+    Just i -> 
+      case ( (pr . last . priceRecord) i) == oldPrice of
+        True -> do
+          return ()
+        False -> do
+          executeMany conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
+          return  ()  
  
  where
    getCost :: [PriceDetail] -> Integer
