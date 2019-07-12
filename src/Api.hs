@@ -169,7 +169,7 @@ showHtml  name url addP addD lowPrice lowDate cPrice cDate = do
   table ! A.style "margin-left: auto; margin-right: auto;" ! width "70%" $ tbody $ do
     tr $ do
         td ! A.style "width: 40%; text-align: left;" $ h4 $ do
-            strong $ a ! href "Link  " ! target url ! rel "noopener" $ "<>"
+            strong $ a ! href url ! target url ! rel "noopener" $ "<>"
             name
         td ! A.style "width: 20%; text-align: right;" $ do
             h4 ! class_ "line-height:0.1;" $ H.span ! A.style "color: #808080;" $ addP
