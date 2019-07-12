@@ -33,7 +33,7 @@ type TStamp = Integer
 type Price = Integer
 
 data PriceDetail =  PriceDetail
-  { dt :: UTCTime, pr ::  Integer } deriving (Eq, Show, Generic)
+  { dt :: UTCTime, pr ::  Integer } deriving (Eq, Show, Generic, Ord)
 
 data ItemURL = ItemURL { url :: String } deriving (Eq, Show, Generic)
 

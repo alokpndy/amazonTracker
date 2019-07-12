@@ -15,6 +15,7 @@ import Control.Monad.IO.Class
 import Parser
 
 import Data.Time.Clock
+import Data.List
 
 
 import Database.PostgreSQL.Simple.Time
@@ -83,17 +84,12 @@ updateItem  conn  = do
    return () 
 
 updatePrice :: Connection -> Item  -> IO ()  
-updatePrice conn s = do
-  oldPrice <-  return $ (pr . last . priceRecord) s  :: IO Integer  -- Old data of asked item
+updatePrice conn s = do 
   oldURL <-  return $ iurl s  :: IO String
-  j <- retrieveItem  oldURL :: IO(Maybe Item)
+  j <- retrieveItem  oldURL :: IO(Maybe Item)  -- new data 
   case j of
     Nothing ->  return ()
     Just i -> do
-      case ( (pr . last . priceRecord) i) == oldPrice of
-        True -> do
-          return ()
-        False -> do
           executeMany conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
           return  ()  
  

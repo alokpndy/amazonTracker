@@ -23,7 +23,7 @@ main = do
   databseURL  <- (lookupEnv "DATABASE_URL")
   case databseURL of
     Nothing -> do
-               conn <- connect defaultConnectInfo { connectDatabase = "amazonlocaldb" }
+               conn <- connect defaultConnectInfo { connectDatabase = "lonefoxdb" }
                main2 conn (read port)
              
     Just c ->  do

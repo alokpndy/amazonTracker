@@ -38,6 +38,7 @@ dependencies:
                       - hashable
                       - time
                       - async
+                      - mtl
 
 library:
   source-dirs: src
