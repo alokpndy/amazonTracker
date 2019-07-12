@@ -88,8 +88,8 @@ updatePrice conn s = do
   oldURL <-  return $ iurl s  :: IO String
   j <- retrieveItem  oldURL :: IO(Maybe Item)
   case j of
-    Nothing -> return ()
-    Just i -> 
+    Nothing ->  return ()
+    Just i -> do
       case ( (pr . last . priceRecord) i) == oldPrice of
         True -> do
           return ()

@@ -62,12 +62,11 @@ retrieveWeatherData url = do
 retrieveItem :: String -> IO (Maybe Item) 
 retrieveItem url = do  
   doc    <- retrieveWeatherData url
-  price <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>>  getAnyPrice)
-  liftIO $ print price 
+  price <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>> getAnyPrice )
   title <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>> getTitle)
-  time <- getCurrentTime
+  time <- getCurrentTime  
   return $ 
-    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url (time)  (mconcat price) 
+    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url (time)  (mconcat  price) 
  
 mkDigit :: String -> String 
 mkDigit [] = []
@@ -103,22 +102,10 @@ stripNLandWh (x:xs)
 
 
 
-getAnyPrice =  atTag "div" >>>  getChildren >>> atTag "span" >>> 
-    proc p -> do
-        sp <- getSalePrice3  -< p
-        case sp of
-          (x:xs) -> returnA -<  Just (x:xs)
-          ""     -> do
-              d3 <- getPriceD3 -< p
-              case sp of
-                 (y:ys) -> returnA -<  Just (y:ys)
-                 ""     -> do
-                        d3 <- getPriceD3 -< p
-                        case d3 of
-                            (z:zs) -> returnA -<  Just (z:zs)
-                            ""    -> returnA -< Nothing 
-              
-
-getSalePrice3 =  hasAttrValue "id" (== "priceblock_saleprice") >>>  deep getText 
-getPriceD3 =    (hasAttrValue "id" (== "priceblock_dealprice")) >>>  deep getText
-getPriceN3 =    (hasAttrValue "id" (== "priceblock_ourprice")) >>>  deep getText
+getAnyPrice =  atTag "div" >>>  getChildren >>> atTag "span"  >>>
+               ( hasAttrValue "id" (== "priceblock_ourprice")   `orElse`
+                 hasAttrValue "id" (== "priceblock_saleprice")  `orElse`
+                 hasAttrValue "id" (== "priceblock_dealprice")) >>>
+               proc p -> do
+                 str <- deep getText -< p
+                 returnA -< Just str 
