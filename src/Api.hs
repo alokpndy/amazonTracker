@@ -36,6 +36,7 @@ import qualified Text.Blaze.Html5   as H
 import Control.Monad (forM_)
 import Text.Blaze.Html5.Attributes as A
 import Control.Monad.Except
+import Control.Monad.Reader
 
 
 -- | Endpoints ----------------------------------------------- 
@@ -105,12 +106,16 @@ myHome it = H.docTypeHtml $ do
     case (fmap makeTable it) of
       [] -> do
          H.head $ do
+             meta ! charset "UTF-8"
+             meta ! A.name "keywords" ! content " IE=edge" ! A.httpEquiv "x-ua-compatible"
+             meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
+
              H.title "LoneFox: Amazon price tracker"
              H.body $ do
                H.h1 "Add Item to Track"
               
       i -> do
-       H.head $ do
+       H.body $ do
           h1 ! A.style "text-align: center;" $ "LoneFox: An amazon.in price tracker"  
           hr
           H.title "LoneFox: Amazon price tracker"
@@ -122,13 +127,19 @@ myHome it = H.docTypeHtml $ do
 
 makeDate :: Html -> Html
 makeDate xs  = let ys = renderHtml xs   
-                   day = (takeWhile (/= ':')) ys
+                   day = (takeWhile (/= ' ')) ys
                    dat = ((takeWhile (/= '.')) . (dropWhile (/= ' ')))  ys
                    in  ( H.toHtml ( day <> " | "  <>  dat))
-  
+setColor :: Html -> Html -> Html
+setColor x y = let x1 = read $ renderHtml x :: Integer
+                   y1 = read $ renderHtml y :: Integer 
+                   in case (x1 > y1) of
+                        True -> H.toHtml ("#39891b" :: String)
+                        False -> H.toHtml ("#7f8c9f" :: String)
+                           
 
 makeTable :: Item -> (Html, AttributeValue, Html, Html, Html, Html, Html, Html) --  name url addP addD lowPrice cPrice cDate
-makeTable it =  ((H.toHtml .  take 40 . (\x -> x ++ ".....................................") . (Parser.name)) it, (H.toValue . iurl) it,
+makeTable it =  ((H.toHtml  . (Parser.name)) it, (H.toValue . iurl) it,
                 ((H.toHtml . show . getAddedtPrice . priceRecord) it),
                 ((H.toHtml . getAddedtDate . priceRecord) it),
                 ((H.toHtml . show . getAvgPrice . priceRecord) it),
@@ -185,7 +196,7 @@ showHtml  name url addP addD lowPrice lowDate cPrice cDate = do
     tr ! A.style "height: 25.75px;" $ do
         td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addP
         td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ lowPrice
-        td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color: #39891b; background-color: #d6fbdf;" $ " " <> cPrice <> " "
+        td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color:#39891b; background-color: #d6fbdf;" $ " " <> cPrice <> " "
     tr ! A.style "height: 18px;" $ do
         td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addD
         td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ lowDate
@@ -193,4 +204,10 @@ showHtml  name url addP addD lowPrice lowDate cPrice cDate = do
     tr ! A.style "height: 18px;" $ do
         td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "ADDED"
         td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "LOWEST"
-        td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #39891b; background-color: #d6fbdf;" $ "CURRENT"
+        td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "CURRENT"
+
+
+
+
+
+
