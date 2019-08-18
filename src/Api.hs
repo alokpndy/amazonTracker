@@ -77,7 +77,7 @@ server c = do
           
     chartApi :: Int -> Handler Homepage
     chartApi i = do
-     -- liftIO $ AS.async $  updateItem2 c 
+    
       xs <- liftIO $ getYs c i
       pxs <- return $ Prelude.map (\(x,y) -> (fromIntegral y,  makeDate2 (show x) ) ) xs
       name <- liftIO $  getOnlyTitle c i
@@ -287,12 +287,17 @@ bargraphAutoSpacing xs name = getChartUrl $ do
                             
 getHeight :: Int -> Int
 getHeight i
-       | i <= 10 = 300
-       | i <= 20 = 400
-       | i <= 30 = 500
-       | i <= 40 = 600
-       | i <= 50 = 700
-       | i <= 60 = 800 
+       | i <= 1 = 10 
+       | i <= 2 = 20 
+       | i <= 5 =  50
+       | i <= 10 = 100
+       | i <= 20 = 200
+       | i <= 30 = 300
+       | i <= 40 = 400
+       | i <= 50 = 500
+       | i <= 60 = 600
+       | i <= 70 = 700
+       | i <= 80 = 800
        | otherwise = 900                               
                                    
 
