@@ -103,15 +103,26 @@ updatePrice conn s = do
   case j of
     Nothing ->  return ()
     Just i -> do
-          executeMany conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
-          return  ()  
+          oldPrices <- query conn "select track.prices.price FROM track.prices WHERE track.prices.itemid = ?"  [(unique i)  :: Int] :: IO [Int]
+          let price = (!!) (fmap pr ((priceRecord i) :: [PriceDetail]) ) 0  ::  Integer
+          case (elem (fromInteger price) oldPrices) of
+            True -> do
+             -- print (oldPrices, price, "SAme") 
+              return ()
+            False -> do
+              
+                  executeMany
+                     conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
+                 -- print (oldPrices, price, "Not Ame")   
+                  return  ()  
  
  where
    getCost :: [PriceDetail] -> Integer
    getCost (p:ps) =  pr p   
 
 
-
+instance FromRow Int where
+  fromRow = field 
 
 
 
