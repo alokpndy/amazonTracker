@@ -254,8 +254,8 @@ showHtml  name url addP addD lowPrice lowDate cPrice cDate ids  = do
             $  a ! href  (toValue (baseUR  (renderHtml ids))) ! target (toValue (renderHtml ">"))  $ ">"
 
 baseUR ::  String -> String
---baseUR  id    = "https://lonefox.herokuapp.com/getItemChart/" <>  id  
-baseUR  id    = "http://localhost:3000/getItemChart/" <>  id 
+baseUR  id    = "https://lonefox.herokuapp.com/getItemChart/" <>  id  
+--baseUR  id    = "http://localhost:3000/getItemChart/" <>  id 
 
 chartHtml title chartLink maxP minP ht = do
   H.head $ do 
