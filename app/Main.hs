@@ -20,8 +20,7 @@ main = do
   
   port <- fmap (fromMaybe "3000") (lookupEnv "PORT")
 
-  databseURL  <- fmap (fromMaybe "DATABASE_UR=postgresql://localhost/amazonlocaldb") (lookupEnv "DATABASE_URL")
-  print databseURL 
+--  databseURL  <- fmap (fromMaybe "DATABASE_UR=postgresql://localhost/amazonlocaldb") (lookupEnv "DATABASE_URL")
   databseURL  <- (lookupEnv "DATABASE_URL")
   case databseURL of
     Nothing -> do

@@ -77,12 +77,12 @@ server c = do
           
     chartApi :: Int -> Handler Homepage
     chartApi i = do
-      liftIO $ AS.async $  updateItem2 c 
+     -- liftIO $ AS.async $  updateItem2 c 
       xs <- liftIO $ getYs c i
       pxs <- return $ Prelude.map (\(x,y) -> (fromIntegral y,  makeDate2 (show x) ) ) xs
-      name <- liftIO $  getOnlyItem c i
+      name <- liftIO $  getOnlyTitle c i
       str <- return  $ bargraphAutoSpacing pxs $ unpack  ((!!) name 0) 
-      return $ chartHtml (H.toValue str) (H.toHtml (makeLabel ( maximum pxs))) (H.toHtml (makeLabel ( minimum pxs))) 
+      return $ chartHtml (H.toHtml ((!!) name 0 ) ) (H.toValue str) (H.toHtml (makeLabel ( maximum pxs))) (H.toHtml (makeLabel ( minimum pxs))) 
 
     makeLabel :: (Int, String) -> String
     makeLabel (x1,x2) = show x1 ++ " (" ++ x2 ++ ")" 
@@ -219,46 +219,44 @@ getAvgPrice it = case it of
      
 
 
-makeChartLink :: String  -> String 
-makeChartLink id  =  "http://localhost:3000/getChart" <> "/" <> id <> "/" 
 
 showHtml  name url addP addD lowPrice lowDate cPrice cDate ids  = do
   H.head $ do 
     meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
   body $ do
     p mempty
-    table ! A.style "width: 300px;  height: 60px; margin-left: auto; margin-right: auto;"
-      $ tbody $ tr ! A.style "height: 60px;"
-      $ td ! A.style "width: 300px; height: 60px;"
+    table ! A.style "width: 300px;  height: 40px; margin-left: auto; margin-right: auto;"
+      $ tbody $ tr ! A.style "height: 40px;"
+      $ td ! A.style "width: 300px; height: 40px;"
       $ h3 ! A.style "text-align: left;"
       $ H.span ! A.style "color: #0e37f3;"
       $ H.span ! A.style "caret-color: #0e37f3"
-      $ a ! href  (toValue (makeChartLink  (renderHtml ids))) ! target (toValue (makeChartLink  (renderHtml ids))) ! rel "noopener"
+      $ a ! href  (toValue (toValue url)) ! target (toValue (toValue url)) ! rel "noopener"
       $ name
-    table ! A.style "height: 75px; border-color: #eceef0; margin-left: auto; margin-right: auto;"  $  tbody $ do
+    table ! A.style "width: 300px; height: 75px; border-color: #eceef0; margin-left: auto; margin-right: auto;"  $  tbody $ do
       tr ! A.style "height: 25.75px;" $ do
           td ! A.style "width: 150px; height: 25px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addP
-         -- td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ lowPrice
           td ! A.style "width: 150px; height: 25px; text-align: left;" $ H.span ! A.style "color:#39891b; background-color: #d6fbdf;"
             $ " " <> cPrice <> " "
       tr ! A.style "height: 18px;" $ do
           td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addD
-        --  td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ lowDate
           td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ cDate
       tr ! A.style "height: 18px;" $ do
-          td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "ADDED"
-        --  td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "LOWEST"
-          td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "CURRENT"
+          td ! A.style "width: 150px; height: 18px; text-align: left;"  $ H.span ! A.style "color: #7f8c9f;" $ "ADDED ON"
+          td ! A.style "width: 140px; height: 18px; text-align: left;"  $ H.span ! A.style "color: #7f8c9f;" $ "CURRENT"
+          td ! A.style "width: 10px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;"
+            $  a ! href  (toValue (baseUR  (renderHtml ids))) ! target (toValue (renderHtml ">"))  $ ">"
+
+baseUR ::  String -> String
+baseUR  id    = "https://lonefox.herokuapp.com/getItemChart/" <>  id  
 
 
-
-
-chartHtml chartLink maxP minP = do
+chartHtml title chartLink maxP minP = do
   H.head $ do 
     meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
   body $ do 
     table ! A.style "height: 447px; margin-left: auto; margin-right: auto;" ! width "320" $ tbody $ do
-      tr $ td ! A.style "width: 310px;" $ h2 "Item: Milton ThermoSteel Duo Deluxe"
+      tr $ td ! A.style "width: 310px;" $ h2  ("Product: " <> title) 
       tr $ td ! A.style "width: 310px;" $ img ! src chartLink ! width "300" ! height "500"
       tr $ td ! A.style "width: 310px; text-align: left;" $
         table ! A.style "height: 6px; margin-left: auto; margin-right: auto;" ! width "320" $ tbody $ tr $ do
@@ -275,7 +273,7 @@ bargraphAutoSpacing xs name = getChartUrl $ do
                                        let labels = Prelude.map (\(x,y) -> show x ++ " (" ++ y ++ ") "  ) xs 
                                        let ys = Prelude.map (\x -> (*) 100 $ fromIntegral x / max) priceList  :: [Float]
                                       
-                                      -- setChartTitle $ take 40 (name ++ (take 40 (cycle ".")))
+                                       --setChartTitle name 
                                       
                                        setChartSize 300 500
                                        setChartType BarHorizontalGrouped
@@ -290,26 +288,3 @@ bargraphAutoSpacing xs name = getChartUrl $ do
 
 
 
-
-{-
-showHtml  name url addP addD lowPrice lowDate cPrice cDate ids  = do
-  H.head $ do 
-    meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
-  body $ do
-    p mempty
-    table ! A.style "height: 30px; margin-left: auto; margin-right: auto;"  $ tbody $ tr ! A.style "height: 18.75px;" $ td ! A.style "width: 585px; height: 18.75px;" $ h3 ! A.style "text-align: left;" $ H.span ! A.style "color: #0e37f3;" $ H.span ! A.style "caret-color: #0e37f3" $ a ! href  (toValue (makeChartLink  (renderHtml ids))) ! target (toValue (makeChartLink  (renderHtml ids))) ! rel "noopener" $  name
-    table ! A.style "height: 75px; border-color: #eceef0; margin-left: auto; margin-right: auto;"  ! width "600" $ tbody $ do
-      tr ! A.style "height: 25.75px;" $ do
-          td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addP
-          td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ lowPrice
-          td ! A.style "width: 143px; height: 25px; text-align: left;" $ H.span ! A.style "color:#39891b; background-color: #d6fbdf;" $ " " <> cPrice <> " "
-      tr ! A.style "height: 18px;" $ do
-          td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addD
-          td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ lowDate
-          td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ cDate
-      tr ! A.style "height: 18px;" $ do
-          td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "ADDED"
-          td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "LOWEST"
-          td ! A.style "width: 143px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f; background-color: #eceef0;" $ "CURRENT"
-
--}

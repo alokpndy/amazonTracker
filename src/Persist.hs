@@ -34,9 +34,10 @@ conn <- connectPostgreSQL (LB.packChars databseURL)
 instance FromRow Text where
   fromRow = field 
 
-getOnlyItem :: Connection -> Int -> IO [Text]
-getOnlyItem c x1 = query c "select track.items.title FROM track.items WHERE track.items.id = ?"  [x1] :: IO  [Text]
- 
+getOnlyTitle :: Connection -> Int -> IO [Text]
+getOnlyTitle c x1 = query c "select track.items.title FROM track.items WHERE track.items.id = ?"  [x1] :: IO  [Text]
+
+  
 
 
 getAllItems :: Connection ->  IO [Item]
