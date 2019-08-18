@@ -21,7 +21,8 @@ import Data.Aeson
 import Data.Hashable
 import Data.Time.Clock
 import Control.Monad.IO.Class
-
+import Data.Char
+import Data.List
 
 
 --------------- START ADT 
@@ -66,7 +67,7 @@ retrieveItem url = do
   title <- runX (readString [withParseHTML yes, withWarnings no] ( LB.unpack doc) >>> getTitle)
   time <- getCurrentTime  
   return $ 
-    mkItem  (stripNLandWh . mconcat$  title) (hashURL url) False url (time)  (mconcat  price) 
+    mkItem  (makeTitle . mconcat$  title) (hashURL url) False url (time)  (mconcat  price) 
  
 mkDigit :: String -> String 
 mkDigit [] = []
@@ -86,26 +87,30 @@ mkPrice s = (read . mkDigit . parsePrice) s
 
 atTag tag = deep (isElem >>> hasName tag)
                         
-getTitle =  deep (isElem >>> hasName "h1" >>> getChildren ) >>>
+getTitle =  deep (isElem >>> hasName "h1" >>> getChildren ) >>> (hasAttrValue "id" (== "productTitle")) >>>
     proc p -> do
-        atV <-  getAttrValue "id"  -< p
-        if  atV == "productTitle" then  do
             val <- deep getText   -< p
-            returnA -<    val 
-        else returnA -<  atV
+            returnA -<   val
 
 stripNLandWh [] = ""
 stripNLandWh (x:xs)
-  | x == '\n' = stripNLandWh xs
-  | x == ' ' = stripNLandWh xs
+  | x == '\n' = stripNLandWh (' ' : xs)
   | otherwise = x : stripNLandWh xs 
 
+stripSpacesFront :: String -> String
+stripSpacesFront [ ]= [ ]
+stripSpacesFront (x:xs) = if x == ' ' then stripSpacesFront xs else x : xs
 
+stripSpacesEnd :: String -> String
+stripSpacesEnd  xs = dropWhileEnd (== ' ') xs
+
+makeTitle :: String -> String
+makeTitle = stripSpacesEnd . stripSpacesFront . stripNLandWh
 
 getAnyPrice =  atTag "div" >>>  getChildren >>> atTag "span"  >>>
                ( hasAttrValue "id" (== "priceblock_ourprice")   `orElse`
                  hasAttrValue "id" (== "priceblock_saleprice")  `orElse`
                  hasAttrValue "id" (== "priceblock_dealprice")) >>>
                proc p -> do
-                 str <- deep getText -< p
+                 str <- deep getText  -< p
                  returnA -< Just str 

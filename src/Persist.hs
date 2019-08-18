@@ -8,7 +8,7 @@ import Database.PostgreSQL.Simple
 import Parser
 import Data.Maybe (fromMaybe)
 import qualified Data.ByteString.Internal as LB
-import qualified Data.Text as Text
+import  Data.Text (Text, pack, unpack, concat) 
 import Data.Foldable
 import Data.Monoid
 import Control.Monad.IO.Class
@@ -17,9 +17,12 @@ import Parser
 import Data.Time.Clock
 import Data.List
 
-
+import Database.PostgreSQL.Simple.FromRow
 import Database.PostgreSQL.Simple.Time
 import qualified  Data.ByteString as B
+
+
+
 {-
 --   \d schema.table  -- show table info 
 -- ALTER TABLE product.trackItem DROP COLUMN itemprice;
@@ -28,10 +31,17 @@ import qualified  Data.ByteString as B
 databseURL  <- fmap (fromMaybe "No dataBase") (lookupEnv "DATABASE_URL")
 conn <- connectPostgreSQL (LB.packChars databseURL)
 -}
+instance FromRow Text where
+  fromRow = field 
+
+getOnlyItem :: Connection -> Int -> IO [Text]
+getOnlyItem c x1 = query c "select track.items.title FROM track.items WHERE track.items.id = ?"  [x1] :: IO  [Text]
+ 
+
 
 getAllItems :: Connection ->  IO [Item]
 getAllItems c = do
-  xs <- liftIO $  query_ c "select *  from track.items" :: IO [(Int, Text.Text, Bool, Text.Text)]
+  xs <- liftIO $  query_ c "select *  from track.items" :: IO [(Int, Text, Bool, Text)]
   case xs of
     [] -> return []
     ys -> do
@@ -40,13 +50,15 @@ getAllItems c = do
          ls  -> do
                  prcs <- liftIO $  (traverse) (\(y1,y2,y3,y4) -> do 
                                                   ps <-  (fmap . fmap) (\(x1,x2) -> PriceDetail (eitherRight  x1)  x2) (getYs c y1)  
-                                                  return $ Item (Text.unpack y2) y1 y3 (Text.unpack y4) (ps)
+                                                  return $ Item (unpack y2) y1 y3 (unpack y4) (ps)
                                                ) ls 
                  liftIO $ return  prcs
                  
                  
 getYs :: Connection -> Int -> IO [(LocalTimestamp , Integer)]
-getYs c x1 =  query c "select track.prices.time, track.prices.price from track.prices where track.prices.itemid = ?"  [x1] 
+getYs c x1 =  query c "select track.prices.time, track.prices.price from track.prices where track.prices.itemid = ?"  [x1]
+
+
 
 eitherRight :: LocalTimestamp -> UTCTime
 eitherRight x =  read $ show x
@@ -66,8 +78,8 @@ addItem  conn s = do
  
  where
 
-   addText :: Text.Text -> Text.Text -> Text.Text -> Text.Text
-   addText x y z = Text.concat  $ x : y : z : []
+   addText :: Text -> Text -> Text -> Text
+   addText x y z = Data.Text.concat  $ x : y : z : []
    
    getCost :: [PriceDetail] -> Integer
    getCost (p:ps) =  pr p   
@@ -96,4 +108,30 @@ updatePrice conn s = do
  where
    getCost :: [PriceDetail] -> Integer
    getCost (p:ps) =  pr p   
+
+
+
+
+
+
+
+
+
+updateItem2 :: Connection  -> IO ()
+updateItem2  conn  = do
+   xs <- getAllItems conn :: IO [Item]
+   traverse  (updateTitle conn) xs
+   return () 
+
+updateTitle :: Connection -> Item  -> IO ()  
+updateTitle conn s = do 
+  oldURL <-  return $ iurl s  :: IO String
+  oldID <-  return $ unique s  :: IO Int
+  j <- retrieveItem  oldURL :: IO(Maybe Item)  -- new data 
+  case j of
+    Nothing ->  return ()
+    Just i -> do
+          executeMany conn  "UPDATE track.items SET title = upd.x FROM (VALUES (?,?)) as upd(x,y) WHERE track.items.id = upd.y" [(name i, oldID)  :: (String, Int)]
+
+          return  ()  
 

@@ -1,0 +1,9 @@
+:set -XFlexibleInstances
+:set -XTypeOperators 
+:set -XKindSignatures
+:set -XPolyKinds
+:set -XTypeFamilies
+:set -XTypeApplications
+:set -XAllowAmbiguousTypes
+:set -XScopedTypeVariables
+:set -XDataKinds 

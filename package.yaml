@@ -40,6 +40,12 @@ dependencies:
                       - async
                       - mtl
                       - transformers
+                      - vector
+                      - hs-gchart
+                     
+                 
+                    
+                     
               
                     
                  
