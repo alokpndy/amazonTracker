@@ -81,8 +81,14 @@ server c = do
       xs <- liftIO $ getYs c i
       pxs <- return $ Prelude.map (\(x,y) -> (fromIntegral y,  makeDate2 (show x) ) ) xs
       name <- liftIO $  getOnlyTitle c i
-      str <- return  $ bargraphAutoSpacing pxs $ unpack  ((!!) name 0) 
-      return $ chartHtml (H.toHtml ((!!) name 0 ) ) (H.toValue str) (H.toHtml (makeLabel ( maximum pxs))) (H.toHtml (makeLabel ( minimum pxs))) 
+      str <- return  $ bargraphAutoSpacing pxs $ unpack  ((!!) name 0)
+      let ln = show $ (getHeight (length pxs))
+      return
+        $ chartHtml (H.toHtml ((!!) name 0 ))
+                    (H.toValue str)
+                    (H.toHtml (makeLabel ( maximum pxs)))
+                    (H.toHtml (makeLabel ( minimum pxs)))
+                    (H.toValue  ln)
 
     makeLabel :: (Int, String) -> String
     makeLabel (x1,x2) = show x1 ++ " (" ++ x2 ++ ")" 
@@ -248,16 +254,16 @@ showHtml  name url addP addD lowPrice lowDate cPrice cDate ids  = do
             $  a ! href  (toValue (baseUR  (renderHtml ids))) ! target (toValue (renderHtml ">"))  $ ">"
 
 baseUR ::  String -> String
-baseUR  id    = "https://lonefox.herokuapp.com/getItemChart/" <>  id  
+--baseUR  id    = "https://lonefox.herokuapp.com/getItemChart/" <>  id  
+baseUR  id    = "http://localhost:3000/getItemChart/" <>  id 
 
-
-chartHtml title chartLink maxP minP = do
+chartHtml title chartLink maxP minP ht = do
   H.head $ do 
     meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
   body $ do 
     table ! A.style "height: 447px; margin-left: auto; margin-right: auto;" ! width "320" $ tbody $ do
       tr $ td ! A.style "width: 310px;" $ h2  ("Product: " <> title) 
-      tr $ td ! A.style "width: 310px;" $ img ! src chartLink ! width "300" ! height "500"
+      tr $ td ! A.style "width: 310px;" $ img ! src chartLink ! width "300" ! height ht
       tr $ td ! A.style "width: 310px; text-align: left;" $
         table ! A.style "height: 6px; margin-left: auto; margin-right: auto;" ! width "320" $ tbody $ tr $ do
           td ! A.style "width: 148.5px; text-align: left;" $ h4 "Lowest: " <> minP
@@ -287,17 +293,16 @@ bargraphAutoSpacing xs name = getChartUrl $ do
                             
 getHeight :: Int -> Int
 getHeight i
-       | i <= 1 = 10 
-       | i <= 2 = 20 
-       | i <= 5 =  50
-       | i <= 10 = 100
-       | i <= 20 = 200
-       | i <= 30 = 300
-       | i <= 40 = 400
-       | i <= 50 = 500
-       | i <= 60 = 600
-       | i <= 70 = 700
-       | i <= 80 = 800
+       | i <= 1 = 30 
+       | i <= 2 = 60 
+       | i <= 5 =  100
+       | i <= 10 = 200
+       | i <= 15 = 250 
+       | i <= 20 = 400
+       | i <= 25 = 450
+       | i <= 30 = 600
+       | i <= 35 = 650 
+       | i <= 40 = 800
        | otherwise = 900                               
                                    
 
