@@ -272,10 +272,10 @@ bargraphAutoSpacing xs name = getChartUrl $ do
                                        let max = fromIntegral $ maximum priceList :: Float
                                        let labels = Prelude.map (\(x,y) -> show x ++ " (" ++ y ++ ") "  ) xs 
                                        let ys = Prelude.map (\x -> (*) 100 $ fromIntegral x / max) priceList  :: [Float]
-                                      
+                                       let lsCount = length xs 
                                        --setChartTitle name 
                                       
-                                       setChartSize 300 500
+                                       setChartSize 300  (getHeight lsCount)
                                        setChartType BarHorizontalGrouped
                                        setDataEncoding Graphics.GChart.text
                                        addAxis $ makeAxis { axisType = AxisLeft
@@ -283,6 +283,18 @@ bargraphAutoSpacing xs name = getChartUrl $ do
                                        addChartData ys
                                        setColors ["4d89f9"]
                                        setBarWidthSpacing automatic
+
+                            
+getHeight :: Int -> Int
+getHeight i
+       | i <= 10 = 300
+       | i <= 20 = 400
+       | i <= 30 = 500
+       | i <= 40 = 600
+       | i <= 50 = 700
+       | i <= 60 = 800 
+       | otherwise = 900                               
+                                   
 
 
 
