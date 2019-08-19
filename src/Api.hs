@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -153,8 +154,32 @@ myHome it = H.docTypeHtml $ do
           h1 ! class_ "site-title" ! A.style "text-align: center;" $ mempty
           H.body $ do
              H.table $ H.style $ toHtml ("width: 516px; border-color: rgba(34, 0, 51, 0)" :: Text)
-             mapM_  (\(x1,x2,x3,x4,x5,x8,x6,x7, xi) ->  showHtml x1 x2 x3 (makeDate x4) x5 (makeDate x8) x6 (makeDate x7) xi) i    --   name url addP addD lowPrice lowDate cPrice cDate id 
+             mapM_  (\(x1,x2,x3,x4,x5,x8,x6,x7, xi)
+                           --   name url addPrice addDate lowPrice lowDate cPrice cDate id textCol 
+                   ->  showHtml x1
+                                x2
+                                x3
+                                (makeDate x4)
+                                x5
+                                (makeDate x8)
+                                x6
+                                (makeDate x7)
+                                xi
+                                (selectTextColor (htmlToIntg x5) (htmlToIntg x6)))
+                                i  
              return ()
+
+
+green =  A.style "color: #39891b;"-- background-color: #d6fbdf;"
+red =  A.style "color: #e65733;"-- background-color: #f5cab9;"
+
+htmlToIntg :: Html -> Integer
+htmlToIntg h = (read . renderHtml) h :: Integer 
+               
+selectTextColor :: Integer -> Integer -> Attribute 
+selectTextColor lp cp
+    | cp > lp = red
+    | cp <= lp = green 
 
 makeDate :: Html -> Html
 makeDate xs  = let ys = renderHtml xs   
@@ -226,7 +251,9 @@ getAvgPrice it = case it of
 
 
 
-showHtml  name url addP addD lowPrice lowDate cPrice cDate ids  = do
+
+
+showHtml  name url addP addD lowPrice lowDate cPrice cDate ids txtCol = do
   H.head $ do 
     meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
   body $ do
@@ -241,9 +268,8 @@ showHtml  name url addP addD lowPrice lowDate cPrice cDate ids  = do
       $ name
     table ! A.style "width: 300px; height: 75px; border-color: #eceef0; margin-left: auto; margin-right: auto;"  $  tbody $ do
       tr ! A.style "height: 25.75px;" $ do
-          td ! A.style "width: 150px; height: 25px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addP
-          td ! A.style "width: 150px; height: 25px; text-align: left;" $ H.span ! A.style "color:#39891b; background-color: #d6fbdf;"
-            $ " " <> cPrice <> " "
+          td ! A.style "width: 150px; height: 20px; text-align: left;" $  H.span ! A.style "color: #7f8c9f;" $ addP
+          td ! A.style "width: 150px; height: 20px; text-align: left;" $  H.span ! txtCol $ " " <> cPrice <> " "
       tr ! A.style "height: 18px;" $ do
           td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addD
           td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ cDate
