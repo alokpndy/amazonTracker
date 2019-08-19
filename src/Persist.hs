@@ -41,16 +41,16 @@ getOnlyTitle c x1 = query c "select track.items.title FROM track.items WHERE tra
 
 getAllItems :: Connection ->  IO [Item]
 getAllItems c = do
-  xs <- liftIO $  query_ c "select *  from track.items" :: IO [(Int, Text, Bool, Text)]
+  xs <- liftIO $  query_ c "select *  from track.items" :: IO [(Int, Text, Bool, Text, Integer)]
   case xs of
     [] -> return []
     ys -> do
        case ys of
          [] -> return []
          ls  -> do
-                 prcs <- liftIO $  (traverse) (\(y1,y2,y3,y4) -> do 
+                 prcs <- liftIO $  (traverse) (\(y1,y2,y3,y4,y5) -> do 
                                                   ps <-  (fmap . fmap) (\(x1,x2) -> PriceDetail (eitherRight  x1)  x2) (getYs c y1)  
-                                                  return $ Item (unpack y2) y1 y3 (unpack y4) (ps)
+                                                  return $ Item (unpack y2) y1 y3 (unpack y4) (ps) y5
                                                ) ls 
                  liftIO $ return  prcs
                  
@@ -72,7 +72,9 @@ addItem  conn s = do
   case getI of
     Nothing -> return Nothing
     Just i -> do 
-      executeMany conn  "insert into track.items (id,title, url) values (?,?,?)" [( (unique i), (name i), (iurl i)) :: (Int, String, String)]
+      executeMany conn
+        "insert into track.items (id,title, url, currentPrice) values (?,?,?,?)"
+           [( (unique i), (name i), (iurl i), (cp i)) :: (Int, String, String, Integer)]
       executeMany conn "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
       return  $  getI  
  
@@ -106,13 +108,15 @@ updatePrice conn s = do
           let price = (!!) (fmap pr ((priceRecord i) :: [PriceDetail]) ) 0  ::  Integer
           case (elem (fromInteger price) oldPrices) of
             True -> do
-             -- print (oldPrices, price, "SAme") 
-              return ()
+                  execute
+                     conn  "insert into track.items (currentPrice) values (?)" [ (cp i)  :: (Integer)] 
+                  return ()
             False -> do
+                  execute
+                     conn  "insert into track.items (currentPrice) values (?)" [ (cp i)  :: (Integer)]
               
                   executeMany
-                     conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]
-                 -- print (oldPrices, price, "Not Ame")   
+                     conn  "insert into track.prices (price,itemid) values (?,?)" [((getCost (priceRecord  i)) , (unique i) ) :: (Integer, Int)]  
                   return  ()  
  
  where

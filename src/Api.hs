@@ -159,18 +159,17 @@ myHome it = H.docTypeHtml $ do
           h1 ! class_ "site-title" ! A.style "text-align: center;" $ mempty
           H.body $ do
              H.table $ H.style $ toHtml ("width: 516px; border-color: rgba(34, 0, 51, 0)" :: Text)
-             mapM_  (\(x1,x2,x3,x4,x5,x8,x6,x7, xi)
-                           --   name url addPrice addDate lowPrice lowDate cPrice cDate id textCol 
+             mapM_  (\(x1,x2,x3,x4,x5,x6,xi,x7)
+                           --   name url addPrice addDate lowPrice cPrice  id textCol 
                    ->  showHtml x1
                                 x2
                                 x3
                                 (makeDate x4)
                                 x5
-                                (makeDate x8)
                                 x6
-                                (makeDate x7)
                                 xi
-                                (selectTextColor (htmlToIntg x5) (htmlToIntg x6)))
+                                (selectTextColor (htmlToIntg x5) (htmlToIntg x6))
+                                x7)
                                 i  
              return ()
 
@@ -188,9 +187,9 @@ selectTextColor lp cp
 
 makeDate :: Html -> Html
 makeDate xs  = let ys = renderHtml xs   
-                   day = (takeWhile (/= ' ')) ys
-                   dat = ((takeWhile (/= '.')) . (dropWhile (/= ' ')))  ys
-                   in  ( H.toHtml ( day <> " \n"  <>  dat))
+                   day =  (++) "'" $ drop 2 $ (takeWhile (/= ' ')) ys
+                   dat =  (reverse . drop 3 . reverse) $ ((takeWhile (/= '.')) . (dropWhile (/= ' ')))  ys
+                   in  ( H.toHtml $ (day <> " \n"  <>  dat) )
 
 makeDate2 :: String -> String
 makeDate2 xs  = let  
@@ -206,15 +205,16 @@ setColor x y = let x1 = read $ renderHtml x :: Integer
                         False -> H.toHtml ("#7f8c9f" :: String)
                            
 
-makeTable :: Item -> (Html, AttributeValue, Html, Html, Html, Html, Html, Html, Html) --  name url addP addD lowPrice cPrice cDate id 
-makeTable it =  ((H.toHtml  . (Parser.name)) it, (H.toValue . iurl) it,
+makeTable :: Item -> (Html, AttributeValue, Html, Html, Html, Html, Html, Html) --  name url addP addD lowPrice cPrice cDate id maxPrice
+makeTable it =  ((H.toHtml  . (Parser.name)) it,
+                (H.toValue . iurl) it,
                 ((H.toHtml . show . getAddedtPrice . priceRecord) it),
                 ((H.toHtml . getAddedtDate . priceRecord) it),
-                ((H.toHtml . show . getAvgPrice . priceRecord) it),
-                ((H.toHtml  . getAvgDate . priceRecord) it),
-                ((H.toHtml . show .getRecentPrice . priceRecord) it),
-                ((H.toHtml . getRecentDate . priceRecord) it),
-                ((H.toHtml . unique) it))
+                ((H.toHtml . show . getMinPrice . priceRecord) it),
+                ((H.toHtml . show  . cp) it),
+                ((H.toHtml . unique) it),
+                ((H.toHtml . show . getMaxPrice . priceRecord) it))
+                
              
 getRecentPrice :: [PriceDetail] -> Integer
 getRecentPrice pd = case pd of
@@ -240,25 +240,23 @@ getAddedtDate pd = case pd of
   [x] ->  show (Parser.dt x)
   xs ->  show $  (Parser.dt . Prelude.head) xs
 
-getAvgDate :: [PriceDetail] -> String
-getAvgDate it = case it of 
-    [] ->  ""
-    [x] ->  (show . Parser.dt $ x)
-    xs ->   let minP =  foldr1 Prelude.min $ fmap pr  xs in 
-                  (show . Parser.dt . Prelude.head) (filter (\x -> Parser.pr x == minP) xs)
-getAvgPrice :: [PriceDetail] -> Integer
-getAvgPrice it = case it of 
+getMinPrice :: [PriceDetail] -> Integer
+getMinPrice it = case it of 
     [] ->  0
     [x] ->  (pr x)
     xs ->   foldr1 Prelude.min $ fmap pr  xs 
                 
-     
+getMaxPrice :: [PriceDetail] -> Integer
+getMaxPrice it = case it of 
+    [] ->  0
+    [x] ->  (pr x)
+    xs ->   foldr1 Prelude.max $ fmap pr  xs 
 
 
 
 
 
-showHtml  name url addP addD lowPrice lowDate cPrice cDate ids txtCol = do
+showHtml  name url addP addD lowPrice  cPrice  ids txtCol maxPrice = do
   H.head $ do 
     meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
   body $ do
@@ -274,13 +272,13 @@ showHtml  name url addP addD lowPrice lowDate cPrice cDate ids txtCol = do
     table ! A.style "width: 300px; height: 75px; border-color: #eceef0; margin-left: auto; margin-right: auto;"  $  tbody $ do
       tr ! A.style "height: 25.75px;" $ do
           td ! A.style "width: 150px; height: 20px; text-align: left;" $  H.span ! A.style "color: #7f8c9f;" $ addP
-          td ! A.style "width: 150px; height: 20px; text-align: left;" $  H.span ! txtCol $ " " <> cPrice <> " "
+          td ! A.style "width: 150px; height: 20px; text-align: left;" $  H.span ! txtCol $ "Current: " <> cPrice <> " "
       tr ! A.style "height: 18px;" $ do
           td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ addD
-          td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ cDate
+          td ! A.style "width: 150px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;" $ "Lowest: " <> lowPrice
       tr ! A.style "height: 18px;" $ do
           td ! A.style "width: 150px; height: 18px; text-align: left;"  $ H.span ! A.style "color: #7f8c9f;" $ "ADDED ON"
-          td ! A.style "width: 140px; height: 18px; text-align: left;"  $ H.span ! A.style "color: #7f8c9f;" $ "CURRENT"
+          td ! A.style "width: 140px; height: 18px; text-align: left;"  $ H.span ! A.style "color: #7f8c9f;" $ "Highest: " <> maxPrice
           td ! A.style "width: 10px; height: 18px; text-align: left;" $ H.span ! A.style "color: #7f8c9f;"
             $  a ! href  (toValue (baseUR  (renderHtml ids))) ! target (toValue (renderHtml ">"))  $ ">"
 

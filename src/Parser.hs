@@ -27,7 +27,7 @@ import Data.List
 
 --------------- START ADT 
 data Item = Item
-  { name :: String, unique :: Int, del :: Bool, iurl :: String, priceRecord :: [PriceDetail] 
+  { name :: String, unique :: Int, del :: Bool, iurl :: String, priceRecord :: [PriceDetail], cp :: Integer 
   } deriving (Eq, Show, Generic)
 
 type TStamp = Integer
@@ -50,7 +50,7 @@ instance FromJSON Item
 instance FromJSON PriceDetail
 
 mkItem :: String -> Int -> Bool -> String -> UTCTime -> Maybe String -> Maybe Item
-mkItem n q d u dt pr = Item n q d u <$> (mkPriceDetail dt pr) 
+mkItem n q d u dt pr = Item n q d u <$> (mkPriceDetail dt pr) <*> (fmap (\x -> ((read . mkDigit . parsePrice)  $ LB.pack x) ) pr)
 
 mkPriceDetail :: UTCTime -> Maybe String  -> Maybe [PriceDetail]
 mkPriceDetail t ms = (fmap (\x -> [PriceDetail t ((read . mkDigit . parsePrice)  $ LB.pack x)] ) ms) 
