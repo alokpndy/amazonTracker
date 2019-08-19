@@ -290,11 +290,11 @@ chartHtml title chartLink maxP minP ht = do
   H.head $ do 
     meta ! A.name "viewport" ! content "width=device-width, initial-scale=1.0"
   body $ do 
-    table ! A.style "height: 447px; margin-left: auto; margin-right: auto;" ! width "320" $ tbody $ do
+    table ! A.style "height: 447px; margin-left: auto; margin-right: auto;" ! width "300" $ tbody $ do
       tr $ td ! A.style "width: 310px;" $ h2  ("Product: " <> title) 
       tr $ td ! A.style "width: 310px;" $ img ! src chartLink ! width "300" ! height ht
       tr $ td ! A.style "width: 310px; text-align: left;" $
-        table ! A.style "height: 6px; margin-left: auto; margin-right: auto;" ! width "320" $ tbody $ tr $ do
+        table ! A.style "height: 6px; margin-left: auto; margin-right: auto;" ! width "300" $ tbody $ tr $ do
           td ! A.style "width: 148.5px; text-align: left;" $ h4 "Lowest: " <> minP
           td ! A.style "width: 148.5px; text-align: right;" $ h4 "Highest: " <> maxP
 
@@ -310,7 +310,7 @@ bargraphAutoSpacing xs name = getChartUrl $ do
                                        let lsCount = length xs 
                                        --setChartTitle name 
                                       
-                                       setChartSize 300  (getHeight lsCount)
+                                       setChartSize 290  (getHeight lsCount)
                                        setChartType BarHorizontalGrouped
                                        setDataEncoding Graphics.GChart.text
                                        addAxis $ makeAxis { axisType = AxisLeft

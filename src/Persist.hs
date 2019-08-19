@@ -108,10 +108,13 @@ updatePrice conn s = do
           let price = (!!) (fmap pr ((priceRecord i) :: [PriceDetail]) ) 0  ::  Integer
           case (elem (fromInteger price) oldPrices) of
             True -> do
-                  executeMany conn
-                    "UPDATE track.items SET currentPrice = upd.x FROM (VALUES (?,?)) as upd(x,y) WHERE track.items.id = upd.y"
-                        [(cp i, unique i)  :: (Integer, Int)] 
-                  return ()
+                  case (cp i == cp s) of 
+                     True -> return ()
+                     False -> do
+                         executeMany conn
+                             "UPDATE track.items SET currentPrice = upd.x FROM (VALUES (?,?)) as upd(x,y) WHERE track.items.id = upd.y"
+                                 [(cp i, unique i)  :: (Integer, Int)] 
+                         return ()
             False -> do
                   executeMany conn
                     "UPDATE track.items SET currentPrice = upd.x FROM (VALUES (?,?)) as upd(x,y) WHERE track.items.id = upd.y"
