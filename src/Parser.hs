@@ -37,7 +37,11 @@ data PriceDetail =  PriceDetail
   { dt :: UTCTime, pr ::  Integer } deriving (Eq, Show, Generic, Ord)
 
 data ItemURL = ItemURL { url :: String } deriving (Eq, Show, Generic)
+data ItemID = ItemID { itmid :: Int } deriving (Eq, Show, Generic)
 
+
+instance ToJSON ItemID
+instance FromJSON ItemID
 instance ToJSON ItemURL
 instance FromJSON ItemURL
 instance ToJSON Item

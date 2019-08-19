@@ -40,13 +40,14 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import Graphics.GChart
 
-
-
+import Data.Time.Clock
+import Database.PostgreSQL.Simple.Time
 
 -- | Endpoints ----------------------------------------------- 
 type HomeApi  = Get '[HTML] Homepage
 type Homepage = H.Html
- 
+
+type UpdatedItemApi = "getUpdatedItem" :> ReqBody '[JSON] ItemID :> Post '[JSON] [(String , Integer)]
 type ItemAllApi = "getAllItem" :> Get '[JSON] [Item]
 type ItemChartApi = "getItemChart" :> Capture "id" Int :>  Get '[HTML] Homepage 
 
@@ -54,13 +55,13 @@ type ItemAddApi = "addItemUrl" :> ReqBody '[JSON] ItemURL :> Post '[JSON] (Maybe
 type UpdateExistingApi = "updateExisting" :> PutAccepted '[JSON] NoContent 
 type DeleteItemApi = "deleteItem" :> Capture "id" Int  :> Delete '[JSON] NoContent  -- make DLETE request using curl 
 
-type Api = HomeApi :<|> ItemAllApi :<|> ItemAddApi  :<|> UpdateExistingApi :<|> DeleteItemApi :<|> ItemChartApi
+type Api = HomeApi :<|> ItemAllApi :<|> ItemAddApi  :<|> UpdateExistingApi :<|> DeleteItemApi :<|> ItemChartApi :<|> UpdatedItemApi
 
 
 -- | Server --------------------------------------------------      
 server ::  Connection -> Server Api
 server c = do
-  homeApi  :<|> itemAllApi  :<|> itemAddApi  :<|>  itemUpdateApi  :<|> deleteApi :<|> chartApi 
+  homeApi  :<|> itemAllApi  :<|> itemAddApi  :<|>  itemUpdateApi  :<|> deleteApi :<|> chartApi  :<|> updatedItem
   
   where
     homeApi :: Handler Homepage
@@ -108,7 +109,11 @@ server c = do
     deleteApi i = do
       liftIO $ AS.async (delItems c i)
       return NoContent
-      
+
+    updatedItem :: ItemID ->  Handler [(String , Integer)]
+    updatedItem i = do
+      item <- liftIO $ getYs c (itmid i) 
+      return $ fmap (\(x,y) -> (,) (show  x) y) item 
 
 instance  FromHttpApiData [String] where
   parseQueryParam param = do
